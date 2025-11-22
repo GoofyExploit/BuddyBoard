@@ -1,6 +1,8 @@
 import passport from 'passport';
-import {Stratergy as GoogleStrategy} from 'passport-google-oauth20';
+import {Strategy as GoogleStrategy} from 'passport-google-oauth20';
 import User from '../models/User.js';
+
+
 
 const  configurePassport = ()=>  {
     passport.use(
@@ -14,21 +16,39 @@ const  configurePassport = ()=>  {
             async (accessToken, refreshToken, profile, done) => {
                 try {
                     const googleId = profile.id;
-                    const name = profile.displayName;
-                    const email = profile.emails[0].value;
-                    const photo = profile.photos[0].value;
 
-                    let user = await User.findOne({googleId});
+                    // SAFELY extract values
+                    const name =
+                        profile.displayName ||
+                        profile.name?.givenName ||
+                        profile._json?.name ||
+                        "Unnamed User";  // Never undefined
+
+                    const email =
+                        profile.emails?.[0]?.value ||
+                        profile._json?.email;
+
+                    if (!email) {
+                       
+                        return done(new Error("Google did not return an email"), null);
+                    }
+
+                    const photo =
+                        profile.photos?.[0]?.value ||
+                        profile._json?.picture ||
+                        "";
+
+                    let user = await User.findOne({ googleId });
 
                     if (!user) {
-                        // create new user
                         user = await User.create({
-                            googleId,
-                            name,
-                            email,
-                            photo,
+                        googleId,
+                        name,
+                        email,
+                        photo,
                         });
                     }
+
                     return done(null, user); // user found or created
                 }
                 catch (error) {

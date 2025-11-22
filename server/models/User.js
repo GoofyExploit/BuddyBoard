@@ -39,8 +39,9 @@ const UserSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Note'
     }],
-    refreshToken: {
-        type: String,
+    refreshTokens: {
+        type: [String],
+        default: []
     }
 }, 
     {timestamps: true}

@@ -29,6 +29,14 @@ const generateRefreshToken = (user) => {
 const verifyAccessToken = (token) => {
     try {
         return jwt.verify(token, process.env.JWT_SECRET);
+        /**
+         * return payload
+         * { 
+         *   id : user._id,
+         *   name : user.name,
+         *   email : user.email
+         * }
+         */
     } catch (error) {
         return null;
     }
@@ -37,6 +45,12 @@ const verifyAccessToken = (token) => {
 const verifyRefreshToken = (token) => { 
     try {
         return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+        /**
+         * return payload
+         * { 
+         *   id : user._id,
+         * }
+         */
     } catch (error) {
         return null;
     }
@@ -48,3 +62,10 @@ export {
     verifyAccessToken,
     verifyRefreshToken
 };
+
+/**
+ * jwt  = header.payload.signature
+ * header = {alg: "HS256", typ: "JWT"}
+ * payload = {id: user._id, name: user.name, email: user.email}
+ * signature = HMACSHA256(base64UrlEncode(header) + "." + base64UrlEncode(payload), secret)
+ */
