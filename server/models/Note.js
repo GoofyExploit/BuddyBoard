@@ -54,6 +54,13 @@ const noteSchema = new Schema({
             ref: 'User'
         },
     ],
+
+    // each note knows which collection it belongs to
+    collection: {
+        type: Schema.Types.ObjectId,
+        ref: 'Collection',
+        default : null
+    },
     shapes : [shapeSchema],
     backgroundColor : {
         type : String,

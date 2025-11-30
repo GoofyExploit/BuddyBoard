@@ -39,6 +39,16 @@ const UserSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Note'
     }],
+
+    /**
+     * array of collection folders
+     */
+
+    collections: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Collection'
+    }],
+    
     refreshTokens: {
         type: [String],
         default: []
