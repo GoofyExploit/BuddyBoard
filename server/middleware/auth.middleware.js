@@ -1,4 +1,4 @@
-import User from '../models/user.model.js';
+import User from '../models/User.js';
 import { verifyAccessToken } from '../config/jwt.js';
 
 const requireAuth = async(req, res, next) => {
@@ -35,4 +35,7 @@ const requireAuth = async(req, res, next) => {
     }
 };
 
-export default requireAuth;
+export { requireAuth };
+
+// access token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MjE2MjNlNjEzMTc2ZmE2NTExNWZhMSIsIm5hbWUiOiJQcmFzaGFudCBNYWluaSIsImVtYWlsIjoicHJhc2hhbnRtYWluaTdAZ21haWwuY29tIiwiaWF0IjoxNzY1MDA0MTU2LCJleHAiOjE3NjUwMDc3NTZ9.oke5_44QQUGnZ6ucyqsHVq2n13jxdSmERAABhNWQJAA
+// refresh token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MjE2MjNlNjEzMTc2ZmE2NTExNWZhMSIsIm5hbWUiOiJQcmFzaGFudCBNYWluaSIsImVtYWlsIjoicHJhc2hhbnRtYWluaTdAZ21haWwuY29tIiwiaWF0IjoxNzY1MDA0MTU2LCJleHAiOjE3NjUwMDc3NTZ9.oke5_44QQUGnZ6ucyqsHVq2n13jxdSmERAABhNWQJAA

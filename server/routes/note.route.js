@@ -30,6 +30,8 @@ router.post("/", requireAuth, async(req, res)=>{
             backgroundColor : "#FFFFFF"
         });
 
+        await note.save();
+
         const user = req.user;
         user.notesOwned.push(note._id);
         await user.save();
@@ -56,7 +58,7 @@ router.post("/", requireAuth, async(req, res)=>{
 router.get("/", requireAuth, async(req, res)=> {
     try {
         const ownedNotes = await Note.find({ owner: req.user._id })
-            .populate('collaborators', 'name email')
+            .populate('collaborators', 'name email photo')
             .sort({updatedAt: -1});
 
         /**
@@ -72,12 +74,14 @@ router.get("/", requireAuth, async(req, res)=> {
                 {
                     "_id": "673f1fe78a4e1b2fab9921a2",
                     "name": "Jane Doe",
-                    "email": "jane.doe@example.com"
+                    "email": "jane.doe@example.com",
+                    "photo": "jane.doe.photo.url"
                 },
                 {
                     "_id": "673f1fa11b93934ab99bc1d2",
                     "name": "John Smith",
-                    "email": "john.smith@example.com"
+                    "email": "john.smith@example.com",
+                    "photo": "john.smith.photo.url"
                 }
             ]
 
@@ -109,7 +113,7 @@ router.get("/:id", requireAuth, async(req, res)=>{
         const noteId = req.params.id;
         const note = await Note.findById(noteId)
             .populate('owner', 'name email')
-            .populate('collaborators', 'name email');
+            .populate('collaborators', 'name email photo');
 
         if (!note) {
             return res.status(404).json({
@@ -118,10 +122,10 @@ router.get("/:id", requireAuth, async(req, res)=>{
         }
 
         // check if requesting user is either owner or collaborator
+        // in collaborators, we have populated user objects not their IDs
 
-        const allowed = 
-            note.owner._id.equals(req.user._id) || 
-            note.collaborators.includes(req.user._id);
+        const isCollaborator = note.collaborators.some(c => c._id.equals(req.user._id));
+        const allowed = note.owner._id.equals(req.user._id) || isCollaborator;
 
         if (!allowed) {
             return res.status(403).json({
@@ -154,9 +158,10 @@ router.put("/:id", requireAuth, async(req, res)=>{
 
         // only owner or collaborator can update note
 
-        const allowed = 
-            note.owner.equals(req.user._id) || 
-            note.collaborators.includes(req.user._id);
+        const isCollaborator = note.collaborators.some(id => id.equals(req.user._id));
+        const allowed = note.owner.equals(req.user._id) || isCollaborator;
+
+
 
         if (!allowed) {
             return res.status(403).json({
@@ -216,11 +221,15 @@ router.post("/:id/add-collaborator", requireAuth, async(req, res)=>{
             });
         }
 
-        if (note.collaborators.includes(userToAdd._id)) {
-            return res.status(400).json({
-                message : "Already a collaborator"
-            });
+        if (userToAdd._id.equals(req.user._id)) {
+            return res.status(400).json({ message: "Owner cannot be collaborator" });
         }
+
+        const alreadyCollaborator = note.collaborators.some(id => id.equals(userToAdd._id));
+        if (alreadyCollaborator) {
+            return res.status(400).json({ message: "Already a collaborator" });
+        }
+
 
         note.collaborators.push(userToAdd._id);
 
@@ -264,6 +273,9 @@ router.post("/:id/remove-collaborator", requireAuth, async(req, res)=> {
         }
 
         note.collaborators = note.collaborators.filter((id)=> id.toString() !== userId);
+        if (note.collaborators.length === 0) {
+            note.type = 'personal';
+        }
         await note.save();
 
         await User.findByIdAndUpdate(userId, {
@@ -373,6 +385,16 @@ router.delete("/:id", requireAuth, async(req, res)=>{
 
         await req.user.save();
 
+        // take User id from note.collaborators and remove noteId from their notesShared array
+
+        if (note.collaborators.length > 0) {
+            await User.updateMany(
+                { _id: { $in: note.collaborators } },
+                { $pull: { notesShared: note._id } }
+            );
+        }
+
+        
         await Note.deleteOne({_id: noteId});
 
         res.json({
@@ -385,3 +407,5 @@ router.delete("/:id", requireAuth, async(req, res)=>{
         res.status(500).json({ message: "Server error" });
     }
 });
+
+export default router;

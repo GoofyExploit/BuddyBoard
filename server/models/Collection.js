@@ -9,18 +9,19 @@ const collectionSchema = new Schema({
     },
 
     owner : {
-        type : mongoose.Schema.Types.ObjectId,
+        type : Schema.Types.ObjectId,
         ref : 'User',
         required : true,
     },
     notes : [{
-        type : mongoose.Schema.Types.ObjectId,
+        type : Schema.Types.ObjectId,
         ref : 'Note',
     }]
 },
     { timestamps: true }
 );
 
+collectionSchema.index({ owner: 1, name: 1 });
 const Collection = mongoose.model('Collection', collectionSchema);
 
 export default Collection;
