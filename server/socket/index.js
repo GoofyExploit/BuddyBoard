@@ -76,7 +76,7 @@ const setupSocket = (httpServer) => {
     });
 }
 
-export default setupSocket;
+export { setupSocket };
 
 /**
  * socket class structure
