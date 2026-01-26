@@ -1,4 +1,5 @@
 import { PenLine, ArrowRight, Sparkles, Layers, Lock, Zap, Cloud, Palette, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import styles from "../css/Landing.module.css";
 import buddyBoardLogo from "../images/BuddyBoard.png";
 
@@ -36,6 +37,8 @@ const features = [
 ];
 
 const Landing = () => {
+  const navigate = useNavigate();
+
   return (
     <div className={styles.page}>
       {/* Navbar */}
@@ -46,7 +49,7 @@ const Landing = () => {
           </div>
 
           <div className={styles.navActions}>
-            <button className={styles.btnGhost}>Log in</button>
+            <button className={styles.btnGhost} onClick={() => navigate("/login")}>Log in</button>
             <button className={styles.btnPrimary}>Go to BuddyBoard</button>
           </div>
         </div>
