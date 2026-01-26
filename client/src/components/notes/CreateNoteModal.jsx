@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { createNote } from '../../api/note.api';
 import { FiX } from 'react-icons/fi';
 
-const CreateNoteModal = ({ onClose }) => {
+const CreateNoteModal = ({ onClose, collections = [] }) => {
     const [title, setTitle] = useState('');
     const [type, setType] = useState('personal');
+    const [collectionId, setCollectionId] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -14,7 +15,11 @@ const CreateNoteModal = ({ onClose }) => {
         setError(null);
 
         try {
-            await createNote({ title: title || 'Untitled Note', type });
+            await createNote({ 
+                title: title || 'Untitled Note', 
+                type,
+                collectionId: collectionId || null
+            });
             onClose();
             // Reload the page to show the new note
             window.location.reload();
@@ -71,6 +76,26 @@ const CreateNoteModal = ({ onClose }) => {
                         >
                             <option value="personal">Personal</option>
                             <option value="collaborative">Collaborative</option>
+                        </select>
+                    </div>
+
+                    {/* Collection selection */}
+                    <div>
+                        <label htmlFor="collection" className="block text-sm font-medium text-gray-700 mb-2">
+                            Collection (Optional)
+                        </label>
+                        <select
+                            id="collection"
+                            value={collectionId}
+                            onChange={(e) => setCollectionId(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
+                        >
+                            <option value="">No Collection</option>
+                            {collections.map((collection) => (
+                                <option key={collection.id || collection._id} value={collection.id || collection._id}>
+                                    {collection.name}
+                                </option>
+                            ))}
                         </select>
                     </div>
 

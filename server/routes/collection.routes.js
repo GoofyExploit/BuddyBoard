@@ -64,7 +64,8 @@ router.get('/', requireAuth, async(req, res)=>{
 router.get('/:id', requireAuth, async(req, res)=> {
     try {
         const collectionId =  req.params.id;
-        const collection = await Collection.findById(collectionId);
+        const collection = await Collection.findById(collectionId)
+            .populate('notes', 'title type updatedAt colorScheme');
 
         if (!collection) {
             return res.status(404).json({ message: "Collection Not Found" });
@@ -209,22 +210,25 @@ router.put('/:id/remove-note', requireAuth, async(req, res)=> {
             return res.status(403).json({ message: "Forbidden" });
         }
 
-        const note =  await Note.findById(noteId);
-        if (!note) {
-            return res.status(404).json({ message: "Note Not Found" });
-        }
-
-        if (!collection.notes.some(id => id.toString() === note._id.toString())) {
+        // Check if note exists in collection first
+        const noteInCollection = collection.notes.some(id => id.toString() === noteId.toString());
+        if (!noteInCollection) {
             return res.status(400).json({ message: "Note not in collection" });
         }
 
+        // Try to find the note, but don't fail if it doesn't exist (it might have been deleted)
+        const note = await Note.findById(noteId);
+        if (note) {
+            note.collection = null;
+            await note.save();
+        }
+
+        // Remove note from collection regardless of whether note exists in DB
         await Collection.updateOne(
             { _id : collectionId },
-            { $pull : { notes : note._id } }
+            { $pull : { notes : noteId } }
         );
 
-        note.collection = null;
-        await note.save();
         res.json({ message : "Note removed from collection successfully" });
 
     }

@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 // NavLink is used to apply active styles to the link when the route matches
 import {
   FiMenu,
@@ -7,18 +7,28 @@ import {
   FiUsers,
   FiFolder,
   FiLogOut,
+  FiEdit2,
+  FiTrash2,
+  FiMoreVertical,
 } from 'react-icons/fi';
 import buddyBoardLogo from '../../images/BuddyBoard.png';
 import logoImage from '../../images/logo.png';
 import defaultAvatar from '../../images/default-avatar.png';
+import { updateCollection, deleteCollection } from '../../api/collection.api';
 
-const Sidebar = ({ user, collections = [], onLogout}) => {
+const Sidebar = ({ user, collections = [], onLogout, onCollectionUpdate}) => {
   // user: { name: string, email: string }
   // collections: [ { id: string, name: string } ]
   // onLogout: function to call when logout is clicked
+  // onCollectionUpdate: function to call when collections are updated
 
   const [collapsed, setCollapsed] = useState(false);
   const [CollectionsOpen, setCollectionsOpen] = useState(true);
+  const [editingCollection, setEditingCollection] = useState(null);
+  const [editingName, setEditingName] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [hoveredCollection, setHoveredCollection] = useState(null);
+  const navigate = useNavigate();
 
 
   const navItem = ({ isActive}) => 
@@ -52,7 +62,7 @@ const Sidebar = ({ user, collections = [], onLogout}) => {
       {/* Navigation Links */}
 
       <nav className = "flex-1 p-3 space-y-1 overflow-y-auto">
-        <NavLink to = "/dashboard" className = {navItem}>
+        <NavLink to = "/dashboard" end className = {navItem}>
           <FiFileText className={collapsed ? "w-6 h-6" : "w-5 h-5"}/>
           {!collapsed && "All Notes"}
         </NavLink>
@@ -91,16 +101,77 @@ const Sidebar = ({ user, collections = [], onLogout}) => {
                 <div className = "text-xs text-gray-400">No Collections</div>
               )}
 
-              {collections.map((c) => (
-                <NavLink
-                  key = {c.id}
-                  to = {`/collection/${c.id}`}
-                  className = {navItem}
-                >
-                  <FiFolder className={collapsed ? "w-6 h-6" : "w-5 h-5"}/>
-                  {c.name}
-                </NavLink>
-              ))}
+              {collections.map((c) => {
+                const collectionId = c.id || c._id;
+                const isEditing = editingCollection === collectionId;
+                
+                return (
+                  <div
+                    key={collectionId}
+                    className="group relative"
+                    onMouseEnter={() => setHoveredCollection(collectionId)}
+                    onMouseLeave={() => setHoveredCollection(null)}
+                  >
+                    {isEditing ? (
+                      <div className="flex items-center gap-2 px-3 py-2">
+                        <input
+                          type="text"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter') {
+                              try {
+                                await updateCollection(collectionId, editingName);
+                                onCollectionUpdate?.();
+                                setEditingCollection(null);
+                              } catch (error) {
+                                console.error("Rename error:", error);
+                              }
+                            } else if (e.key === 'Escape') {
+                              setEditingCollection(null);
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <NavLink
+                        to={`/collection/${collectionId}`}
+                        className={navItem}
+                      >
+                        <FiFolder className={collapsed ? "w-6 h-6" : "w-5 h-5"}/>
+                        <span className="flex-1">{c.name}</span>
+                        {!collapsed && hoveredCollection === collectionId && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setEditingCollection(collectionId);
+                                setEditingName(c.name);
+                              }}
+                              className="p-1 rounded hover:bg-gray-200 text-gray-600 hover:text-gray-900"
+                              title="Rename"
+                            >
+                              <FiEdit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setShowDeleteConfirm(collectionId);
+                              }}
+                              className="p-1 rounded hover:bg-red-100 text-gray-600 hover:text-red-600"
+                              title="Delete"
+                            >
+                              <FiTrash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </NavLink>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -143,6 +214,41 @@ const Sidebar = ({ user, collections = [], onLogout}) => {
 
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Delete Collection?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this collection? Notes in this collection will not be deleted, but they will be removed from the collection.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await deleteCollection(showDeleteConfirm);
+                    onCollectionUpdate?.();
+                    setShowDeleteConfirm(null);
+                    navigate("/dashboard");
+                  } catch (error) {
+                    console.error("Delete error:", error);
+                  }
+                }}
+                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </aside>
   );
