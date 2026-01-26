@@ -1,0 +1,371 @@
+@reference "tailwindcss";
+
+/* ===== Base Styles ===== */
+.page {
+  @apply min-h-screen;
+  background: hsl(40 33% 98%);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== Announcement Banner ===== */
+.banner {
+  @apply flex items-center justify-center gap-2 py-2 text-sm;
+  background: hsl(210 100% 97%);
+  color: hsl(210 80% 45%);
+}
+
+.bannerIcon {
+  @apply w-4 h-4;
+  color: hsl(35 90% 55%);
+}
+
+/* ===== Navbar ===== */
+.navbar {
+  @apply sticky top-0 z-50 border-b;
+  background: hsl(40 33% 98% / 0.95);
+  backdrop-filter: blur(12px);
+  border-color: hsl(35 20% 90%);
+}
+
+.navContainer {
+  @apply container mx-auto px-6 h-16 flex items-center justify-between;
+}
+
+.logo {
+  @apply flex items-center gap-2;
+}
+
+.logoIcon {
+  @apply w-9 h-9 rounded-lg flex items-center justify-center;
+  background: linear-gradient(135deg, hsl(210 100% 50%) 0%, hsl(210 100% 60%) 100%);
+}
+
+.logoSvg {
+  @apply w-5 h-5;
+  color: white;
+}
+
+.logoText {
+  @apply text-xl font-semibold;
+  font-family: 'Playfair Display', serif;
+  color: hsl(210 80% 45%);
+}
+
+.navLinks {
+  @apply hidden md:flex items-center gap-8;
+}
+
+.navLink {
+  @apply text-sm transition-colors;
+  color: hsl(30 8% 45%);
+}
+
+.navLink:hover {
+  color: hsl(30 10% 15%);
+}
+
+.navActions {
+  @apply flex items-center gap-3;
+}
+
+/* ===== Buttons ===== */
+.btnGhost {
+  @apply hidden sm:flex px-4 py-2 text-sm font-medium rounded-lg transition-colors;
+  color: hsl(30 10% 25%);
+}
+
+.btnGhost:hover {
+  background: hsl(35 15% 92%);
+}
+
+.btnPrimary {
+  @apply inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold rounded-lg transition-all;
+  background: linear-gradient(135deg, hsl(35 80% 50%) 0%, hsl(25 85% 55%) 100%);
+  color: white;
+  box-shadow: 0 0 40px hsl(35 80% 50% / 0.2);
+}
+
+.btnPrimary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 32px hsl(35 80% 50% / 0.3);
+}
+
+.btnOutline {
+  @apply inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold rounded-lg border-2 transition-all;
+  border-color: hsl(35 80% 50%);
+  color: hsl(30 10% 15%);
+  background: transparent;
+}
+
+.btnOutline:hover {
+  background: hsl(35 80% 50%);
+  color: white;
+}
+
+.btnIcon {
+  @apply w-4 h-4;
+}
+
+/* ===== Hero Section ===== */
+.hero {
+  @apply pt-16 pb-24 px-6 text-center;
+  background: linear-gradient(180deg, hsl(40 33% 98%) 0%, hsl(35 25% 95%) 100%);
+}
+
+.heroContent {
+  @apply max-w-4xl mx-auto;
+}
+
+.heroTitle {
+  @apply text-5xl md:text-6xl lg:text-7xl font-semibold leading-tight mb-6;
+  font-family: 'Playfair Display', serif;
+  color: hsl(30 10% 15%);
+}
+
+.heroHighlight {
+  @apply inline-block px-4 py-1 rounded-lg;
+  background: hsl(210 100% 50%);
+  color: white;
+}
+
+.heroSubtitle {
+  @apply text-lg md:text-xl mb-2;
+  color: hsl(30 8% 45%);
+}
+
+.heroTagline {
+  @apply text-lg md:text-xl mb-10;
+  color: hsl(30 8% 45%);
+}
+
+.heroTagline strong {
+  color: hsl(30 10% 15%);
+}
+
+.heroCtas {
+  @apply flex flex-col sm:flex-row items-center justify-center gap-4 mb-12;
+}
+
+.socialProof {
+  @apply mt-8;
+}
+
+.proofText {
+  @apply text-sm;
+  color: hsl(30 8% 55%);
+}
+
+/* ===== Preview Card ===== */
+.previewContainer {
+  @apply mt-16 max-w-5xl mx-auto px-6;
+}
+
+.previewCard {
+  @apply rounded-2xl p-8 md:p-12;
+  background: hsl(40 25% 96%);
+  border: 1px solid hsl(35 20% 88%);
+  box-shadow: 0 8px 32px -8px hsl(30 20% 20% / 0.12);
+}
+
+.previewDots {
+  @apply flex items-center gap-2 mb-6;
+}
+
+.dotRed {
+  @apply w-3 h-3 rounded-full;
+  background: hsl(0 84% 60% / 0.6);
+}
+
+.dotYellow {
+  @apply w-3 h-3 rounded-full;
+  background: hsl(35 80% 50% / 0.6);
+}
+
+.dotGreen {
+  @apply w-3 h-3 rounded-full;
+  background: hsl(35 60% 55% / 0.6);
+}
+
+.previewContent {
+  @apply space-y-4;
+}
+
+.previewTitle {
+  @apply w-1/3 h-8 rounded;
+  background: hsl(35 15% 85%);
+}
+
+.previewLine {
+  @apply w-full h-3 rounded;
+  background: hsl(35 15% 88%);
+}
+
+.previewLineShort {
+  @apply w-2/3 h-3 rounded;
+  background: hsl(35 15% 88%);
+}
+
+.previewGrid {
+  @apply mt-8 grid grid-cols-3 gap-4;
+}
+
+.previewBlock {
+  @apply h-20 rounded-lg;
+  background: hsl(35 20% 90%);
+}
+
+/* ===== Features Section ===== */
+.features {
+  @apply py-24 px-6;
+  background: hsl(40 33% 98%);
+}
+
+.sectionContainer {
+  @apply container mx-auto;
+}
+
+.sectionHeader {
+  @apply text-center max-w-2xl mx-auto mb-16;
+}
+
+.sectionTitle {
+  @apply text-4xl md:text-5xl font-semibold mb-4;
+  font-family: 'Playfair Display', serif;
+  color: hsl(30 10% 15%);
+}
+
+.sectionSubtitle {
+  @apply text-lg;
+  color: hsl(30 8% 45%);
+}
+
+.featuresGrid {
+  @apply grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto;
+}
+
+.featureCard {
+  @apply p-8 rounded-2xl border transition-all;
+  background: hsl(40 25% 96%);
+  border-color: hsl(35 20% 88%);
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px -8px hsl(30 20% 20% / 0.12);
+}
+
+.featureIcon {
+  @apply w-12 h-12 rounded-xl flex items-center justify-center mb-5;
+  background: linear-gradient(135deg, hsl(35 80% 50%) 0%, hsl(25 85% 55%) 100%);
+  box-shadow: 0 4px 24px -4px hsl(30 20% 20% / 0.08);
+}
+
+.featureCard:hover .featureIcon {
+  box-shadow: 0 0 40px hsl(35 80% 50% / 0.15);
+}
+
+.featureSvg {
+  @apply w-6 h-6;
+  color: white;
+}
+
+.featureTitle {
+  @apply text-xl font-semibold mb-2;
+  font-family: 'Playfair Display', serif;
+  color: hsl(30 10% 15%);
+}
+
+.featureDescription {
+  @apply leading-relaxed;
+  color: hsl(30 8% 45%);
+}
+
+/* ===== CTA Section ===== */
+.cta {
+  @apply py-24 px-6;
+  background: hsl(40 25% 96%);
+}
+
+.ctaCard {
+  @apply max-w-4xl mx-auto text-center p-12 md:p-16 rounded-3xl relative overflow-hidden;
+  background: hsl(40 33% 98%);
+  border: 1px solid hsl(35 20% 88%);
+  box-shadow: 0 8px 32px -8px hsl(30 20% 20% / 0.12);
+}
+
+.ctaCard::before {
+  content: '';
+  @apply absolute top-0 right-0 w-64 h-64 rounded-full;
+  background: linear-gradient(135deg, hsl(35 80% 50%) 0%, hsl(25 85% 55%) 100%);
+  opacity: 0.05;
+  filter: blur(48px);
+}
+
+.ctaCard::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-48 h-48 rounded-full;
+  background: linear-gradient(135deg, hsl(35 80% 50%) 0%, hsl(25 85% 55%) 100%);
+  opacity: 0.05;
+  filter: blur(48px);
+}
+
+.ctaTitle {
+  @apply relative text-4xl md:text-5xl font-semibold mb-4;
+  font-family: 'Playfair Display', serif;
+  color: hsl(30 10% 15%);
+}
+
+.ctaSubtitle {
+  @apply relative text-lg max-w-xl mx-auto mb-8;
+  color: hsl(30 8% 45%);
+}
+
+.ctaNote {
+  @apply relative mt-6 text-sm;
+  color: hsl(30 8% 55%);
+}
+
+/* ===== Footer ===== */
+.footer {
+  @apply py-12 px-6 border-t;
+  background: hsl(40 33% 98%);
+  border-color: hsl(35 20% 88%);
+}
+
+.footerContainer {
+  @apply container mx-auto flex flex-col md:flex-row items-center justify-between gap-6;
+}
+
+.logoIconSmall {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center;
+  background: linear-gradient(135deg, hsl(35 80% 50%) 0%, hsl(25 85% 55%) 100%);
+}
+
+.logoSvgSmall {
+  @apply w-4 h-4;
+  color: white;
+}
+
+.logoTextSmall {
+  @apply text-lg font-semibold;
+  font-family: 'Playfair Display', serif;
+  color: hsl(30 10% 15%);
+}
+
+.footerLinks {
+  @apply flex items-center gap-8;
+}
+
+.footerLink {
+  @apply text-sm transition-colors;
+  color: hsl(30 8% 45%);
+}
+
+.footerLink:hover {
+  color: hsl(30 10% 15%);
+}
+
+.copyright {
+  @apply text-sm;
+  color: hsl(30 8% 45%);
+}
