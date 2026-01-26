@@ -65,6 +65,24 @@ const noteSchema = new Schema({
     backgroundColor : {
         type : String,
         default : "#FFFFFF"
+    },
+    colorScheme : {
+        cover : {
+            type : String,
+            default : "#68A240"
+        },
+        spine : {
+            type : String,
+            default : "#FFD632"
+        },
+        spineDark : {
+            type : String,
+            default : "#D8A128"
+        },
+        pages : {
+            type : String,
+            default : "#D5D9CF"
+        }
     }
 },
     {timestamps: true}

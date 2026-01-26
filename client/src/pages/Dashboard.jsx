@@ -59,14 +59,17 @@ const Dashboard = () => {
 
   if (authLoading || !user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg">Loading...</div>
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+          <div className="text-gray-600 font-medium">Loading...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <Sidebar
         user={user}
         // usr: { name: string, email: string }
@@ -74,56 +77,72 @@ const Dashboard = () => {
         onLogout={handleLogout}
       />
 
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-8 overflow-y-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">Your Notes</h1>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Your Notes</h1>
+            <p className="text-sm text-gray-500">Manage and organize your notes</p>
+          </div>
           <button
             onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition"
+            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold flex items-center gap-2"
           >
-            + Create Note
+            <span className="text-lg">+</span>
+            Create Note
           </button>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded text-red-700">
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-red-700 shadow-sm">
             {error}
           </div>
         )}
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-600">Loading notes...</div>
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+              <div className="text-gray-500 text-sm">Loading notes...</div>
+            </div>
           </div>
         ) : (
           <>
-            {/* Owned Notes */}
-            <h2 className="text-lg font-medium mb-3">Owned</h2>
-            {owned.length === 0 ? (
-              <p className="text-gray-500 mb-6">No notes yet. Create your first note!</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-                {owned.map((note) => (
-                  <NoteCard key={note._id} note={note} />
-                ))}
-              </div>
-            )}
+            {/* All Notes */}
+            <div className="mb-10">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-1 h-6 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></span>
+                All Notes
+              </h2>
+              {owned.length === 0 ? (
+                <div className="bg-white rounded-xl border-2 border-dashed border-gray-200 p-12 text-center">
+                  <p className="text-gray-400 mb-2">No notes yet</p>
+                  <p className="text-sm text-gray-500">Create your first note to get started!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                  {owned.map((note) => (
+                    <NoteCard key={note._id} note={note} />
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Shared Notes */}
             {shared.length > 0 && (
-              <>
-                <h2 className="text-lg font-medium mt-8 mb-3">
+              <div className="mt-12">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="w-1 h-6 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></span>
                   Shared with you
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                   {shared.map((note) => (
                     <NoteCard key={note._id} note={note} />
                   ))}
                 </div>
-              </>
+              </div>
             )}
           </>
         )}

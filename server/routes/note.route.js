@@ -10,6 +10,23 @@ const router = express.Router();
 * create note (personal or collaborative)
 */
 
+// Color scheme generator - creates random color schemes for notebooks
+const generateColorScheme = () => {
+    const schemes = [
+        { cover: "#68A240", spine: "#FFD632", spineDark: "#D8A128", pages: "#D5D9CF" }, // Original green
+        { cover: "#4A90E2", spine: "#FF6B6B", spineDark: "#EE5A6F", pages: "#E8F4F8" }, // Blue/Red
+        { cover: "#9B59B6", spine: "#F39C12", spineDark: "#E67E22", pages: "#F4E6F7" }, // Purple/Orange
+        { cover: "#E74C3C", spine: "#F1C40F", spineDark: "#F39C12", pages: "#FADBD8" }, // Red/Yellow
+        { cover: "#3498DB", spine: "#2ECC71", spineDark: "#27AE60", pages: "#EBF5FB" }, // Blue/Green
+        { cover: "#E67E22", spine: "#F39C12", spineDark: "#D35400", pages: "#FDEBD0" }, // Orange
+        { cover: "#16A085", spine: "#F4D03F", spineDark: "#F39C12", pages: "#D5F4E6" }, // Teal/Yellow
+        { cover: "#8E44AD", spine: "#EC7063", spineDark: "#C0392B", pages: "#EBDEF0" }, // Purple/Pink
+        { cover: "#2980B9", spine: "#F7DC6F", spineDark: "#F4D03F", pages: "#D6EAF8" }, // Blue/Gold
+        { cover: "#27AE60", spine: "#F39C12", spineDark: "#E67E22", pages: "#D5F4E6" }, // Green/Orange
+    ];
+    return schemes[Math.floor(Math.random() * schemes.length)];
+};
+
 router.post("/", requireAuth, async(req, res)=>{
 
     try {
@@ -20,6 +37,8 @@ router.post("/", requireAuth, async(req, res)=>{
          * CollectionId : optional, to add note to a collection folder
          */
 
+        const colorScheme = generateColorScheme();
+
         const note = new Note({
             title : title || "Untitled Note",
             type : type || 'personal',
@@ -27,7 +46,8 @@ router.post("/", requireAuth, async(req, res)=>{
             collaborators : [],
             collection : collectionId || null,
             shapes : [],
-            backgroundColor : "#FFFFFF"
+            backgroundColor : "#FFFFFF",
+            colorScheme : colorScheme
         });
 
         await note.save();
