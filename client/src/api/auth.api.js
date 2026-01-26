@@ -1,6 +1,7 @@
 import api from './axios.js';
 
 const getMe = () => api.get('/auth/me');
+// getme returns { id: string, name: string, email: string }
 
 const logout = () => api.post('/auth/logout');
 
