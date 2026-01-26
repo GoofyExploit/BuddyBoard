@@ -10,19 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
     "axios": "^1.13.2",
+    "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.12.0",
-=======
-    "axios": "^1.7.9",
-    "lucide-react": "^0.563.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
->>>>>>> 75935b1257a0e2be5dfd1bde968b2e64f3b89a17
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
