@@ -1,10 +1,10 @@
-import { createContext, use, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { getMe} from "../api/auth.api.js";
 
 const AuthContext = createContext();
 
 // useEffect function to fetch user data - AuthProvider
-const AuthProvider = ({ children}) =>{
+export const AuthProvider = ({ children}) =>{
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -34,8 +34,5 @@ const AuthProvider = ({ children}) =>{
 export const useAuth = () => {
     return useContext(AuthContext);
 }
-
-// exporting AuthProvider
-export  {AuthProvider};
     
 
