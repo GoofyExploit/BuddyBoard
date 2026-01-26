@@ -56,6 +56,7 @@ router.post("/", requireAuth, async(req, res)=>{
  */
 
 router.get("/", requireAuth, async(req, res)=> {
+    // req.user is populated by requireAuth middleware
     try {
         const ownedNotes = await Note.find({ owner: req.user._id })
             .populate('collaborators', 'name email photo')
