@@ -8,6 +8,8 @@ import {
   FiFolder,
   FiLogOut,
 } from 'react-icons/fi';
+import logoImage from '../../images/logo.png';
+import defaultAvatar from '../../images/default-avatar.png';
 
 const Sidebar = ({ user, collections = [], onLogout}) => {
   // user: { name: string, email: string }
@@ -31,7 +33,7 @@ const Sidebar = ({ user, collections = [], onLogout}) => {
       <div className = "h-16 flex items-center justify-between px-3 border-b">
         <div className = "flex items-center gap-2">
           <img
-            src = "../../images/logo.png"
+            src = {logoImage}
             alt = "BuddyBoard"
             className = "h-7 w-7"
           />
@@ -112,7 +114,7 @@ const Sidebar = ({ user, collections = [], onLogout}) => {
       <div className = "border-t p-3">
         <div className = "flex items-center gap-3">
           <img
-            src = {user?.photo || "../../images/default-avatar.png"}
+            src = {user?.photo || defaultAvatar}
             alt = "profile"
             className='h-8 w-8 rounded-full'
           />
