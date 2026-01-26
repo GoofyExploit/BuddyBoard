@@ -81,7 +81,7 @@ const Sidebar = ({ user, collections = [], onLogout}) => {
             {!collapsed && (
               <>
                 <span className = "ml-3 flex-1 text-left">Collections</span>
-                <span className = "text-x5">
+                <span className = "text-xs">
                   {CollectionsOpen ? '▾' : '▸'}
                 </span>
               </>
