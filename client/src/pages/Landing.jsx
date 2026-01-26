@@ -1,5 +1,6 @@
 import { PenLine, ArrowRight, Sparkles, Layers, Lock, Zap, Cloud, Palette, Search } from "lucide-react";
 import styles from "../css/Landing.module.css";
+import buddyBoardLogo from "../images/BuddyBoard.png";
 
 const features = [
   {
@@ -37,27 +38,11 @@ const features = [
 const Landing = () => {
   return (
     <div className={styles.page}>
-      {/* Announcement Banner */}
-      <div className={styles.banner}>
-        <Sparkles className={styles.bannerIcon} />
-        <span>New: AI-powered organization is here!</span>
-      </div>
-
       {/* Navbar */}
       <nav className={styles.navbar}>
         <div className={styles.navContainer}>
           <div className={styles.logo}>
-            <div className={styles.logoIcon}>
-              <PenLine className={styles.logoSvg} />
-            </div>
-            <span className={styles.logoText}>BuddyBoard</span>
-          </div>
-          
-          <div className={styles.navLinks}>
-            <a href="#features" className={styles.navLink}>What's New</a>
-            <a href="#pricing" className={styles.navLink}>Pricing</a>
-            <a href="#about" className={styles.navLink}>Blog</a>
-            <a href="#help" className={styles.navLink}>Help</a>
+            <img src={buddyBoardLogo} alt="BuddyBoard" className={styles.logoImage} />
           </div>
 
           <div className={styles.navActions}>
@@ -85,36 +70,10 @@ const Landing = () => {
               Start Writing Free
               <ArrowRight className={styles.btnIcon} />
             </button>
-            <button className={styles.btnOutline}>
-              See how it works
-            </button>
           </div>
-
-          <div className={styles.socialProof}>
-            <span className={styles.proofText}>Trusted by 10K+ writers worldwide</span>
-          </div>
-        </div>
-
-        {/* App Preview */}
-        <div className={styles.previewContainer}>
-          <div className={styles.previewCard}>
-            <div className={styles.previewDots}>
-              <span className={styles.dotRed}></span>
-              <span className={styles.dotYellow}></span>
-              <span className={styles.dotGreen}></span>
-            </div>
-            <div className={styles.previewContent}>
-              <div className={styles.previewTitle}></div>
-              <div className={styles.previewLine}></div>
-              <div className={styles.previewLine}></div>
-              <div className={styles.previewLine}></div>
-              <div className={styles.previewLineShort}></div>
-              <div className={styles.previewGrid}>
-                <div className={styles.previewBlock}></div>
-                <div className={styles.previewBlock}></div>
-                <div className={styles.previewBlock}></div>
-              </div>
-            </div>
+          
+          <div className={styles.heroLogo}>
+            <img src={buddyBoardLogo} alt="BuddyBoard" className={styles.heroLogoImage} />
           </div>
         </div>
       </section>
@@ -163,19 +122,6 @@ const Landing = () => {
       {/* Footer */}
       <footer className={styles.footer}>
         <div className={styles.footerContainer}>
-          <div className={styles.logo}>
-            <div className={styles.logoIconSmall}>
-              <PenLine className={styles.logoSvgSmall} />
-            </div>
-            <span className={styles.logoTextSmall}>BuddyBoard</span>
-          </div>
-          
-          <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Privacy</a>
-            <a href="#" className={styles.footerLink}>Terms</a>
-            <a href="#" className={styles.footerLink}>Contact</a>
-          </div>
-          
           <p className={styles.copyright}>© 2026 BuddyBoard. All rights reserved.</p>
         </div>
       </footer>
