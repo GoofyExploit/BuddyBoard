@@ -1,132 +1,218 @@
-import { useState } from 'react';
-import { createNote } from '../../api/note.api';
-import { FiX } from 'react-icons/fi';
+import { useState } from "react";
+import { FiX, FiPlus } from "react-icons/fi";
+import { createNote, addCollaborator } from "../../api/note.api";
 
-const CreateNoteModal = ({ onClose, collections = [] }) => {
-    const [title, setTitle] = useState('');
-    const [type, setType] = useState('personal');
-    const [collectionId, setCollectionId] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+const CreateNoteModal = ({ onClose, collections = [], onCreated }) => {
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState("personal");
+  const [collectionId, setCollectionId] = useState("");
+  const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
+  const [collaboratorEmail, setCollaboratorEmail] = useState("");
+  const [collaborators, setCollaborators] = useState([]);
+  const [collaboratorError, setCollaboratorError] = useState("");
 
-        try {
-            await createNote({ 
-                title: title || 'Untitled Note', 
-                type,
-                collectionId: collectionId || null
-            });
-            onClose();
-            // Reload the page to show the new note
-            window.location.reload();
-        } catch (error) {
-            console.error('Create note error:', error);
-            setError(error.response?.data?.message || 'Failed to create note');
-        } finally {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const isValidEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const addEmail = () => {
+    if (!isValidEmail(collaboratorEmail)) {
+      setCollaboratorError("Invalid email format");
+      return;
+    }
+
+    if (collaborators.includes(collaboratorEmail)) {
+      setCollaboratorError("Email already added");
+      return;
+    }
+
+    setCollaborators([...collaborators, collaboratorEmail]);
+    setCollaboratorEmail("");
+    setCollaboratorError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setCollaboratorError("");
+
+    try {
+      // 1️⃣ Create note
+      const res = await createNote({
+        title: title || "Untitled Note",
+        type,
+        collectionId: collectionId || null,
+        backgroundColor,
+      });
+
+      const noteId = res.data._id;
+
+      // 2️⃣ Add collaborators (backend validates existence)
+      if (type === "collaborative") {
+        for (const email of collaborators) {
+          try {
+            await addCollaborator(noteId, email);
+          } catch (err) {
+            setCollaboratorError(
+              err.response?.data?.message || "Failed to add collaborator"
+            );
             setLoading(false);
+            return;
+          }
         }
-    };
+      }
 
-    return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
-                {/* Close button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
-                >
-                    <FiX className="w-5 h-5" />
-                </button>
+      onCreated?.();
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create note");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                {/* Header */}
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Note</h2>
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white w-full max-w-md rounded-xl p-6 relative">
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-black"
+        >
+          <FiX size={20} />
+        </button>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Title input */}
-                    <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                            Note Title
-                        </label>
-                        <input
-                            type="text"
-                            id="title"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Enter note title..."
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-                            autoFocus
-                        />
-                    </div>
+        <h2 className="text-xl font-semibold mb-5">Create New Note</h2>
 
-                    {/* Type selection */}
-                    <div>
-                        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                            Note Type
-                        </label>
-                        <select
-                            id="type"
-                            value={type}
-                            onChange={(e) => setType(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
-                        >
-                            <option value="personal">Personal</option>
-                            <option value="collaborative">Collaborative</option>
-                        </select>
-                    </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Title */}
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Note title"
+            className="w-full border px-3 py-2 rounded-lg"
+          />
 
-                    {/* Collection selection */}
-                    <div>
-                        <label htmlFor="collection" className="block text-sm font-medium text-gray-700 mb-2">
-                            Collection (Optional)
-                        </label>
-                        <select
-                            id="collection"
-                            value={collectionId}
-                            onChange={(e) => setCollectionId(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
-                        >
-                            <option value="">No Collection</option>
-                            {collections.map((collection) => (
-                                <option key={collection.id || collection._id} value={collection.id || collection._id}>
-                                    {collection.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+          {/* Type */}
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="w-full border px-3 py-2 rounded-lg"
+          >
+            <option value="personal">Personal</option>
+            <option value="collaborative">Collaborative</option>
+          </select>
 
-                    {/* Error message */}
-                    {error && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                            {error}
-                        </div>
-                    )}
-
-                    {/* Buttons */}
-                    <div className="flex gap-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? 'Creating...' : 'Create Note'}
-                        </button>
-                    </div>
-                </form>
+          {/* Background Color */}
+          <div>
+            <p className="text-sm font-medium mb-2">Background</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setBackgroundColor("#FFFFFF")}
+                className={`w-10 h-10 rounded border ${
+                  backgroundColor === "#FFFFFF"
+                    ? "ring-2 ring-black"
+                    : ""
+                }`}
+                style={{ backgroundColor: "#FFFFFF" }}
+              />
+              <button
+                type="button"
+                onClick={() => setBackgroundColor("#000000")}
+                className={`w-10 h-10 rounded border ${
+                  backgroundColor === "#000000"
+                    ? "ring-2 ring-black"
+                    : ""
+                }`}
+                style={{ backgroundColor: "#000000" }}
+              />
             </div>
-        </div>
-    );
+          </div>
+
+          {/* Collection */}
+          <select
+            value={collectionId}
+            onChange={(e) => setCollectionId(e.target.value)}
+            className="w-full border px-3 py-2 rounded-lg"
+          >
+            <option value="">No Collection</option>
+            {collections.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Collaborators */}
+          {type === "collaborative" && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Collaborators (Email)</p>
+
+              <div className="flex gap-2">
+                <input
+                  value={collaboratorEmail}
+                  onChange={(e) => {
+                    setCollaboratorEmail(e.target.value);
+                    setCollaboratorError("");
+                  }}
+                  placeholder="user@example.com"
+                  className="flex-1 border px-3 py-2 rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={addEmail}
+                  className="px-3 bg-black text-white rounded-lg"
+                >
+                  <FiPlus />
+                </button>
+              </div>
+
+              {collaboratorError && (
+                <p className="text-sm text-red-600">
+                  {collaboratorError}
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                {collaborators.map((email) => (
+                  <span
+                    key={email}
+                    className="px-2 py-1 bg-gray-100 rounded text-sm"
+                  >
+                    {email}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 border rounded-lg py-2"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={loading}
+              className="flex-1 bg-black text-white rounded-lg py-2"
+            >
+              {loading ? "Creating..." : "Create"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default CreateNoteModal;

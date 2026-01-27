@@ -108,11 +108,23 @@ router.get("/", requireAuth, async(req, res)=> {
 
          */
 
-        const sharedNotes = await Note.find({
-            collaborators: req.user._id
-        })
-        .populate("owner", "name email")
-        .sort({updatedAt: -1});
+        const { with: collaboratorId } = req.query;
+
+        let sharedQuery = {
+        collaborators: req.user._id,
+        };
+
+        if (collaboratorId) {
+        sharedQuery.collaborators = {
+            $all: [req.user._id, collaboratorId],
+        };
+        }
+
+        const sharedNotes = await Note.find(sharedQuery)
+        .populate("owner", "name email photo")
+        .populate("collaborators", "name email photo")
+        .sort({ updatedAt: -1 });
+
 
         res.json({
             owned : ownedNotes,
@@ -217,61 +229,46 @@ router.put("/:id", requireAuth, async(req, res)=>{
  * add collaborator to collaborative note
  */
 
-router.post("/:id/add-collaborator", requireAuth, async(req, res)=>{
-    try {
-        const {email} = req.body;
-        const note = await Note.findById(req.params.id);
+router.post("/:id/add-collaborator", requireAuth, async (req, res) => {
+  try {
+    const { email } = req.body;
+    const note = await Note.findById(req.params.id);
 
-        if (!note) {
-            return res.status(404).json({
-                message: "Note not found"
-            });
-        }
+    if (!note)
+      return res.status(404).json({ message: "Note not found" });
 
-        if (!note.owner.equals(req.user._id)) {
-            return res.status(403).json({
-                message : "Only owner can add collaborators"
-            });
-        }
+    if (!note.owner.equals(req.user._id))
+      return res.status(403).json({ message: "Only owner can add collaborators" });
 
-        const userToAdd = await User.findOne({email});
+    const userToAdd = await User.findOne({ email });
 
-        if (!userToAdd) {
-            return res.status(404).json({
-                message : "No user with this email"
-            });
-        }
+    if (!userToAdd)
+      return res.status(404).json({ message: "No user with this email" });
 
-        if (userToAdd._id.equals(req.user._id)) {
-            return res.status(400).json({ message: "Owner cannot be collaborator" });
-        }
+    if (userToAdd._id.equals(req.user._id))
+      return res.status(400).json({ message: "Owner cannot be collaborator" });
 
-        const alreadyCollaborator = note.collaborators.some(id => id.equals(userToAdd._id));
-        if (alreadyCollaborator) {
-            return res.status(400).json({ message: "Already a collaborator" });
-        }
+    if (note.collaborators.includes(userToAdd._id))
+      return res.status(400).json({ message: "Already a collaborator" });
 
+    // ✅ update note
+    note.collaborators.push(userToAdd._id);
+    note.type = "collaborative";
+    await note.save();
 
-        note.collaborators.push(userToAdd._id);
+    // ✅ IMPORTANT FIX HERE
+    await User.updateOne(
+      { _id: userToAdd._id },
+      { $addToSet: { notesShared: note._id } }
+    );
 
-        if (note.type !== 'collaborative') {
-            note.type = 'collaborative';
-        }
-
-        await note.save();
-
-        userToAdd.notesShared.push(note._id);
-        await userToAdd.save();
-
-        res.json({
-            message : "Collaborator added", note
-        });
-    }
-    catch (error) {
-        console.error("add collaborator error:", error);
-        res.status(500).json({ message: "Server error" });
-    }
+    res.json({ message: "Collaborator added", note });
+  } catch (error) {
+    console.error("Add collaborator error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 });
+
 
 /**
  * remove collaborator from collaborative note
@@ -299,9 +296,11 @@ router.post("/:id/remove-collaborator", requireAuth, async(req, res)=> {
         }
         await note.save();
 
-        await User.findByIdAndUpdate(userId, {
-            $pull: { notesShared: note._id }
-        });
+        await User.updateOne(
+        { _id: userId },
+        { $pull: { notesShared: note._id } }
+        );
+
         res.json({
             message : "Collaborator removed", note
         });

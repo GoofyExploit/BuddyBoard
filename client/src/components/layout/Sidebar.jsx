@@ -16,7 +16,15 @@ import logoImage from '../../images/logo.png';
 import defaultAvatar from '../../images/default-avatar.png';
 import { updateCollection, deleteCollection } from '../../api/collection.api';
 
-const Sidebar = ({ user, collections = [], onLogout, onCollectionUpdate}) => {
+const Sidebar = ({ 
+  user,
+  collections = [],
+  sharedCollaborators = [],
+  selectedSharedUser = null,
+  onSelectSharedUser = () => {},
+  onLogout,
+  onCollectionUpdate,
+}) => {
   // user: { name: string, email: string }
   // collections: [ { id: string, name: string } ]
   // onLogout: function to call when logout is clicked
@@ -24,6 +32,8 @@ const Sidebar = ({ user, collections = [], onLogout, onCollectionUpdate}) => {
 
   const [collapsed, setCollapsed] = useState(false);
   const [CollectionsOpen, setCollectionsOpen] = useState(true);
+  const [sharedOpen, setSharedOpen] = useState(true);
+
   const [editingCollection, setEditingCollection] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
@@ -72,10 +82,64 @@ const Sidebar = ({ user, collections = [], onLogout, onCollectionUpdate}) => {
           {!collapsed && "Owned Notes"}
         </NavLink>
 
-        <NavLink to = "/dashboard/shared" className = {navItem}>
-          <FiUsers className={collapsed ? "w-6 h-6" : "w-5 h-5"}/>
-          {!collapsed && "Shared Notes"}
-        </NavLink>
+        {/* Shared Notes Section */}
+        <div className="mt-1">
+          <button
+            onClick={() => setSharedOpen(!sharedOpen)}
+            className={`flex items-center w-full ${
+              collapsed ? "justify-center px-2" : "px-4"
+            } py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg`}
+          >
+            <FiUsers className={collapsed ? "w-6 h-6" : "w-5 h-5"} />
+            {!collapsed && (
+              <>
+                <span className="ml-3 flex-1 text-left">Shared Notes</span>
+                <span className="text-xs text-gray-400">
+                  {sharedOpen ? "▾" : "▸"}
+                </span>
+              </>
+            )}
+          </button>
+
+          {/* Dropdown */}
+          {sharedOpen && !collapsed && (
+            <div className="ml-8 mt-1 space-y-1">
+              {/* All shared */}
+              <button
+                onClick={() => {
+                  onSelectSharedUser(null);
+                  navigate("/dashboard/shared");
+                }}
+                className={`block w-full text-left text-sm px-3 py-1.5 rounded ${
+                  selectedSharedUser === null
+                    ? "bg-orange-50 text-orange-600 font-medium"
+                    : "hover:bg-gray-100 text-gray-600"
+                }`}
+              >
+                All
+              </button>
+
+              {/* By collaborator */}
+              {sharedCollaborators.map((u) => (
+                <button
+                  key={u._id}
+                  onClick={() => {
+                    onSelectSharedUser(u._id);
+                    navigate("/dashboard/shared");
+                  }}
+                  className={`block w-full text-left text-sm px-3 py-1.5 rounded ${
+                    selectedSharedUser === u._id
+                      ? "bg-orange-50 text-orange-600 font-medium"
+                      : "hover:bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {u.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
 
         {/* Collections Section */}
 
