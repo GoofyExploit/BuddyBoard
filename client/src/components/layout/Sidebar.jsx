@@ -19,11 +19,11 @@ import { updateCollection, deleteCollection } from '../../api/collection.api';
 const Sidebar = ({ 
   user,
   collections = [],
-  sharedCollaborators = [],
-  selectedSharedUser = null,
-  onSelectSharedUser = () => {},
+  sharedOwners = [],
+  selectedSharedUser,
+  onSelectSharedUser,
   onLogout,
-  onCollectionUpdate,
+  onCollectionUpdate
 }) => {
   // user: { name: string, email: string }
   // collections: [ { id: string, name: string } ]
@@ -120,7 +120,7 @@ const Sidebar = ({
               </button>
 
               {/* By collaborator */}
-              {sharedCollaborators.map((u) => (
+              {sharedOwners.map((u) => (
                 <button
                   key={u._id}
                   onClick={() => {

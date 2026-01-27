@@ -35,10 +35,11 @@ const Dashboard = () => {
   /* ---------------------------------------------
      Build unique collaborators from shared notes
   --------------------------------------------- */
-  const sharedCollaborators = Array.from(
+  const sharedOwners = Array.from(
     new Map(
       shared
-        .flatMap(note => note.collaborators || [])
+        .map(note => note.owner)
+        .filter(Boolean)
         .map(user => [user._id, user])
     ).values()
   );
@@ -47,9 +48,7 @@ const Dashboard = () => {
      Filter shared notes by selected collaborator
   --------------------------------------------- */
   const filteredShared = selectedSharedUser
-    ? shared.filter(note =>
-        note.collaborators?.some(c => c._id === selectedSharedUser)
-      )
+    ? shared.filter(note => note.owner?._id === selectedSharedUser)
     : shared;
 
   /* ---------------------------------------------
@@ -150,7 +149,7 @@ const Dashboard = () => {
       <Sidebar
         user={user}
         collections={collections}
-        sharedCollaborators={sharedCollaborators}
+        sharedOwners={sharedOwners}          
         selectedSharedUser={selectedSharedUser}
         onSelectSharedUser={setSelectedSharedUser}
         onLogout={handleLogout}
