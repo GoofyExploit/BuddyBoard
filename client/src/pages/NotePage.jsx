@@ -44,7 +44,6 @@ const NotePage = () => {
         setShapes={setShapes}
         tool={toolState.tool}
         strokeColor={toolState.strokeColor}
-        fillColor={toolState.fillColor}
         strokeWidth={toolState.strokeWidth}
       />
     </div>

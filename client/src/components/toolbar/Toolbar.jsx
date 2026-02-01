@@ -1,121 +1,114 @@
 import {
   FiMousePointer,
   FiSquare,
-  FiCircle,
-  FiEdit3,
+  FiEdit2,
   FiType,
-  FiDelete,
+  FiCircle,
+  FiMinus,
+  FiArrowRight,
+  FiTriangle,
 } from "react-icons/fi";
+import { BsEraser } from "react-icons/bs";
+
 import ToolButton from "./ToolButton";
 
 const Toolbar = ({ toolState, setToolState }) => {
-  const setTool = (tool) =>
-    setToolState((prev) => ({ ...prev, tool }));
+  const {tool, strokeColor, strokeWidth} = toolState;
 
   return (
     <div
       className="
-        fixed left-4 top-1/2 -translate-y-1/2
-        bg-white shadow-xl rounded-2xl
-        p-3 space-y-3 z-50
+        flex items-center gap-3 px-4 py-3 border-b bg-white shadow-sm
       "
     >
       {/* TOOLS */}
       <ToolButton
-        icon={<FiMousePointer size={18} />}
-        title="Select"
-        active={toolState.tool === "select"}
-        onClick={() => setTool("select")}
+        icon={<FiMousePointer/>}
+        label="Select"
+        active={tool === "select"}
+        onClick={() => setToolState(s => ({...s, tool : "select"}))}
       />
 
       <ToolButton
-        icon={<FiSquare size={18} />}
-        title="Rectangle"
-        active={toolState.tool === "rect"}
-        onClick={() => setTool("rect")}
+        icon={<FiEdit2 />}
+        label="Pen"
+        active={tool === "pen"}
+        onClick={() => setToolState(s => ({...s, tool : "pen"}))}
       />
 
       <ToolButton
-        icon={<FiCircle size={18} />}
-        title="Ellipse"
-        active={toolState.tool === "ellipse"}
-        onClick={() => setTool("ellipse")}
+        icon={<FiSquare />}
+        label="Rectangle"
+        active={tool === "rect"}
+        onClick={() => setToolState((s) => ({ ...s, tool: "rect" }))}
+      />
+      <ToolButton
+        icon={<FiCircle />}
+        label="Circle"
+        active={tool === "circle"}
+        onClick={() => setToolState((s) => ({ ...s, tool: "circle" }))}
+      />
+      <ToolButton
+        icon={<FiCircle />}
+        label="Ellipse"
+        active={tool === "ellipse"}
+        onClick={() => setToolState((s) => ({ ...s, tool: "ellipse" }))}
+      />
+      <ToolButton
+        icon={<FiMinus />}
+        label="Line"
+        active={tool === "lineStraight"}
+        onClick={() => setToolState((s) => ({ ...s, tool: "lineStraight" }))}
+      />
+      <ToolButton
+        icon={<FiArrowRight />}
+        label="Arrow"
+        active={tool === "arrow"}
+        onClick={() => setToolState((s) => ({ ...s, tool: "arrow" }))}
+      />
+      <ToolButton
+        icon={<FiTriangle />}
+        label="Triangle"
+        active={tool === "triangle"}
+        onClick={() => setToolState((s) => ({ ...s, tool: "triangle" }))}
+      />
+      <ToolButton
+        icon={<FiType />}
+        label="Text"
+        active={tool === "text"}
+        onClick={() => setToolState(s => ({...s, tool : "text"}))}
       />
 
       <ToolButton
-        icon={<FiEdit3 size={18} />}
-        title="Pen"
-        active={toolState.tool === "pen"}
-        onClick={() => setTool("pen")}
+        icon={<BsEraser/>}
+        label="Eraser"
+        active={tool === "eraser"}
+        onClick={() => setToolState(s => ({...s, tool : "eraser"}))}
       />
 
-      <ToolButton
-        icon={<FiType size={18} />}
-        title="Text"
-        active={toolState.tool === "text"}
-        onClick={() => setTool("text")}
+      <div className="w-px h-6 bg-gray-200 mx-2" />
+
+      {/* Color Picker */}
+      <input
+        type = "color"
+        value = {strokeColor}
+        onChange = {(e) => 
+          setToolState(s => ({...s, strokeColor : e.target.value}))
+        }
+        className="w-8 h-8 cursor-pointer"
+      >
+      </input>
+
+      {/* Stroke width */}
+      <input
+        type = "range"
+        min = {1}
+        max = {10}
+        value = {strokeWidth}
+        onChange = {(e) => 
+          setToolState(s => ({...s, strokeWidth :Number(e.target.value)}))
+        }
       />
-
-      <ToolButton
-        icon={<FiDelete size={18} />}
-        title="Eraser"
-        active={toolState.tool === "eraser"}
-        onClick={() => setTool("eraser")}
-      />
-
-      <div className="h-px bg-gray-200 my-2" />
-
-      {/* STROKE COLOR */}
-      <div className="flex flex-col items-center gap-1">
-        <input
-          type="color"
-          value={toolState.strokeColor}
-          onChange={(e) =>
-            setToolState((prev) => ({
-              ...prev,
-              strokeColor: e.target.value,
-            }))
-          }
-          className="w-8 h-8 cursor-pointer border-none"
-        />
-        <span className="text-[10px] text-gray-500">Stroke</span>
-      </div>
-
-      {/* FILL COLOR */}
-      <div className="flex flex-col items-center gap-1">
-        <input
-          type="color"
-          value={toolState.fillColor}
-          onChange={(e) =>
-            setToolState((prev) => ({
-              ...prev,
-              fillColor: e.target.value,
-            }))
-          }
-          className="w-8 h-8 cursor-pointer border-none"
-        />
-        <span className="text-[10px] text-gray-500">Fill</span>
-      </div>
-
-      {/* STROKE WIDTH */}
-      <div className="flex flex-col items-center gap-1">
-        <input
-          type="range"
-          min={1}
-          max={10}
-          value={toolState.strokeWidth}
-          onChange={(e) =>
-            setToolState((prev) => ({
-              ...prev,
-              strokeWidth: Number(e.target.value),
-            }))
-          }
-          className="w-20"
-        />
-        <span className="text-[10px] text-gray-500">
-          Width: {toolState.strokeWidth}
-        </span>
-      </div>
     </div>
   );
 };

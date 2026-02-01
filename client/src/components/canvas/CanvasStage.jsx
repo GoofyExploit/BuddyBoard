@@ -1,4 +1,4 @@
-import { Stage, Layer, Rect, Line, Text } from "react-konva";
+import { Stage, Layer, Rect, Line, Text, Circle, Ellipse, Arrow, RegularPolygon } from "react-konva";
 import { useRef, useState, useEffect } from "react";
 
 /*
@@ -15,13 +15,20 @@ import { useRef, useState, useEffect } from "react";
     It returns a plain JavaScript object with a single current property, which can be updated synchronously. 
 */
 
-const CanvasStage = ({ shapes, setShapes, tool }) => {
+const CanvasStage = ({ 
+  shapes,
+  setShapes,
+  tool,
+  strokeColor,
+  strokeWidth,
+}) => {
   const stageRef = useRef(null);
   const containerRef = useRef(null);
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [textInput, setTextInput] = useState(null);
   const textInputRef = useRef(null);
+  const [drawingShapeId, setDrawingShapeId] = useState(null);
   // textInputRef is used to focus the textarea when it's created 
   const isTextInputNewRef = useRef(false);
   /*
@@ -78,20 +85,86 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
       return;
     }
 
+    const createDragShape = (type, shapeProps) => {
+      const id = crypto.randomUUID();
+      setDrawingShapeId(id);
+      setShapes((prev) => [...prev, { id, type, ...shapeProps }]);
+    };
+
     /* RECTANGLE */
     if (tool === "rect") {
-      setShapes((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          type: "rect",
-          x: pos.x,
-          y: pos.y,
-          width: 120,
-          height: 80,
-          fill: "#000",
-        },
-      ]);
+      createDragShape("rect", {
+        x: pos.x,
+        y: pos.y,
+        width: 0,
+        height: 0,
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+        fillEnabled: false,
+      });
+    }
+
+    /* CIRCLE */
+    if (tool === "circle") {
+      createDragShape("circle", {
+        x: pos.x,
+        y: pos.y,
+        radius: 0,
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+        fillEnabled: false,
+      });
+    }
+
+    /* ELLIPSE */
+    if (tool === "ellipse") {
+      createDragShape("ellipse", {
+        x: pos.x,
+        y: pos.y,
+        radiusX: 0,
+        radiusY: 0,
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+        fillEnabled: false,
+      });
+    }
+
+    /* STRAIGHT LINE */
+    if (tool === "lineStraight") {
+      createDragShape("lineStraight", {
+        x: pos.x,
+        y: pos.y,
+        points: [0, 0, 0, 0],
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+      });
+    }
+
+    /* ARROW */
+    if (tool === "arrow") {
+      createDragShape("arrow", {
+        x: pos.x,
+        y: pos.y,
+        points: [0, 0, 0, 0],
+        pointerLength: 10,
+        pointerWidth: 10,
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+        fill: strokeColor,
+      });
+    }
+
+    /* TRIANGLE */
+    if (tool === "triangle") {
+      createDragShape("triangle", {
+        x: pos.x,
+        y: pos.y,
+        width: 0,
+        height: 0,
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+        fillEnabled: false,
+      });
     }
 
     /* PEN */
@@ -103,8 +176,8 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
           id: crypto.randomUUID(),
           type: "line",
           points: [pos.x, pos.y],
-          stroke: "#000",
-          strokeWidth: 2,
+          stroke: strokeColor,
+          strokeWidth: strokeWidth,
           tension: 0.5,
           lineCap: "round",
           lineJoin: "round",
@@ -118,9 +191,7 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
       const screenX = rect.left + pos.x;
       const screenY = rect.top + pos.y;
 
-      console.log("Setting textInput:", { screenX, screenY, canvasX: pos.x, canvasY: pos.y });
-      console.log("Stage rect:", rect);
-      console.log("Pointer position:", pos);
+      
 
       setTextInput({
         screenX: screenX,
@@ -130,19 +201,25 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
         value: "",
       });
     }
+
+    if (tool === "eraser") {
+      eraseAtPoint(pos.x, pos.y);
+    }
   };
 
   /* -------------------------------
      MOUSE MOVE (PEN)
   -------------------------------- */
   const handleMouseMove = () => {
-    if (!isDrawing || tool !== "pen") return;
+  const stage = stageRef.current;
+  if (!stage) return;
 
-    const stage = stageRef.current;
-    const pos = stage.getPointerPosition();
-    if (!pos) return;
+  const pos = stage.getPointerPosition();
+  if (!pos) return;
 
-    setShapes((prev) => {
+  /* PEN TOOL */
+  if (isDrawing && tool === "pen") {
+    setShapes(prev => {
       const last = prev[prev.length - 1];
       if (!last || last.type !== "line") return prev;
 
@@ -153,13 +230,59 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
 
       return [...prev.slice(0, -1), updated];
     });
-  };
+  }
+
+  /* DRAG RESIZE for rect, circle, ellipse, lineStraight, arrow, triangle */
+  if (drawingShapeId) {
+    const dragTools = ["rect", "circle", "ellipse", "lineStraight", "arrow", "triangle"];
+    if (dragTools.includes(tool)) {
+      setShapes(prev =>
+        prev.map(shape => {
+          if (shape.id !== drawingShapeId) return shape;
+
+          if (shape.type === "rect" || shape.type === "triangle") {
+            const newWidth = pos.x - shape.x;
+            const newHeight = pos.y - shape.y;
+            const x = newWidth >= 0 ? shape.x : pos.x;
+            const y = newHeight >= 0 ? shape.y : pos.y;
+            const width = Math.abs(newWidth);
+            const height = Math.abs(newHeight);
+            return { ...shape, x, y, width, height };
+          }
+
+          if (shape.type === "circle") {
+            const radius = Math.sqrt(
+              Math.pow(pos.x - shape.x, 2) + Math.pow(pos.y - shape.y, 2)
+            );
+            return { ...shape, radius };
+          }
+
+          if (shape.type === "ellipse") {
+            const radiusX = Math.abs(pos.x - shape.x);
+            const radiusY = Math.abs(pos.y - shape.y);
+            return { ...shape, radiusX, radiusY };
+          }
+
+          if (shape.type === "lineStraight" || shape.type === "arrow") {
+            const dx = pos.x - shape.x;
+            const dy = pos.y - shape.y;
+            return { ...shape, points: [0, 0, dx, dy] };
+          }
+
+          return shape;
+        })
+      );
+    }
+  }
+};
+
 
   /* -------------------------------
      MOUSE UP
   -------------------------------- */
   const handleMouseUp = () => {
     setIsDrawing(false);
+    setDrawingShapeId(null);
   };
 
   /* -------------------------------
@@ -188,7 +311,7 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
           y: current.canvasY,
           text: current.value,
           fontSize: 20,
-          fill: "#000",
+          fill: strokeColor,
         },
       ]);
 
@@ -204,6 +327,39 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
       return <Rect key={shape.id} {...shape} />;
     }
 
+    if (shape.type === "circle") {
+      return <Circle key={shape.id} {...shape} />;
+    }
+
+    if (shape.type === "ellipse") {
+      return <Ellipse key={shape.id} {...shape} />;
+    }
+
+    if (shape.type === "lineStraight") {
+      return <Line key={shape.id} {...shape} />;
+    }
+
+    if (shape.type === "arrow") {
+      return <Arrow key={shape.id} {...shape} />;
+    }
+
+    if (shape.type === "triangle") {
+      const { width = 0, height = 0, ...rest } = shape;
+      const w = Math.max(width, 1);
+      const h = Math.max(height, 1);
+      const radius = Math.min(w, h) / 2;
+      return (
+        <RegularPolygon
+          key={shape.id}
+          {...rest}
+          x={shape.x + w / 2}
+          y={shape.y + h / 2}
+          radius={radius}
+          sides={3}
+        />
+      );
+    }
+
     if (shape.type === "line") {
       return <Line key={shape.id} {...shape} />;
     }
@@ -213,6 +369,79 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
     }
 
     return null;
+  };
+
+  const pointToSegmentDist = (px, py, x1, y1, x2, y2) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy) || 0.001;
+    const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (len * len)));
+    const projX = x1 + t * dx;
+    const projY = y1 + t * dy;
+    return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
+  };
+
+  const hitTestShape = (shape, x, y) => {
+    if (shape.type === "line") {
+      for (let i = 0; i < shape.points.length; i += 2) {
+        const dx = shape.points[i] - x;
+        const dy = shape.points[i + 1] - y;
+        if (Math.sqrt(dx * dx + dy * dy) < 8) return true;
+      }
+      return false;
+    }
+    if (shape.type === "rect" || shape.type === "triangle") {
+      const w = shape.width || 0;
+      const h = shape.height || 0;
+      if (w <= 0 || h <= 0) return false;
+      return (
+        x >= shape.x &&
+        x <= shape.x + w &&
+        y >= shape.y &&
+        y <= shape.y + h
+      );
+    }
+    if (shape.type === "circle") {
+      const r = shape.radius || 0;
+      if (r <= 0) return false;
+      const dx = x - shape.x;
+      const dy = y - shape.y;
+      return Math.sqrt(dx * dx + dy * dy) <= r;
+    }
+    if (shape.type === "ellipse") {
+      const rx = Math.max(shape.radiusX || 0, 0.1);
+      const ry = Math.max(shape.radiusY || 0, 0.1);
+      const dx = (x - shape.x) / rx;
+      const dy = (y - shape.y) / ry;
+      return dx * dx + dy * dy <= 1;
+    }
+    if (shape.type === "lineStraight" || shape.type === "arrow") {
+      const pts = shape.points || [0, 0, 0, 0];
+      const [x1, y1, x2, y2] = [
+        shape.x + pts[0],
+        shape.y + pts[1],
+        shape.x + pts[2],
+        shape.y + pts[3],
+      ];
+      if (x1 === x2 && y1 === y2) return false;
+      const dist = pointToSegmentDist(x, y, x1, y1, x2, y2);
+      return dist < 8;
+    }
+    if (shape.type === "text") {
+      return (
+        x >= shape.x &&
+        x <= shape.x + shape.text.length * 12 &&
+        y >= shape.y - 20 &&
+        y <= shape.y + 5
+      );
+    }
+    return false;
+  };
+
+  const eraseAtPoint = (x, y) => {
+    setShapes((prev) =>
+      prev.filter((shape) => !hitTestShape(shape, x, y))
+    );
   };
 
   return (
@@ -254,23 +483,30 @@ const CanvasStage = ({ shapes, setShapes, tool }) => {
           ref={textInputRef}
           autoFocus
           style={{
-            position: "fixed",
-            top: `${textInput.screenY}px`,
-            left: `${textInput.screenX}px`,
-            fontSize: "20px",
-            padding: "8px",
-            border: "2px solid #000",
-            borderRadius: "4px",
-            outline: "none",
-            resize: "none",
-            background: "#fff",
-            color: "#000",
-            zIndex: 99999,
+            position : "fixed",
+            top : `${textInput.screenY}px`,
+            left : `${textInput.screenX}px`,
+
+            background: "transparent",
+            border: "none",
+            outline :"none",
+            padding : "0",
+            margin: "0",
+
+            fontSize :"20px",
+            fontFamily : "Arial, sans-serif",
+            color : strokeColor,
+
+            caretColor : "#000",
+            resize:"none",
+            overflow: "hidden",
             whiteSpace: "pre",
-            minWidth: "150px",
-            minHeight: "30px",
-            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-            fontFamily: "Arial, sans-serif",
+
+            minWidth : "1px",
+            minHeight : "1em",
+            width: `${Math.max(1, textInput.value.length)}ch`,
+
+            zIndex: 99999,
             pointerEvents: "auto",
           }}
           value={textInput.value}
