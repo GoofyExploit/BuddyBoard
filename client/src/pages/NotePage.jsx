@@ -15,7 +15,7 @@ const NotePage = () => {
     tool : "select",
     strokeColor : "#000000",
     strokeWidth : 2,
-    fillColor : "#000000",
+    eraserSize : 12,
   })
 
   useEffect(()=> {
@@ -45,6 +45,7 @@ const NotePage = () => {
         tool={toolState.tool}
         strokeColor={toolState.strokeColor}
         strokeWidth={toolState.strokeWidth}
+        eraserSize = {toolState.eraserSize}
       />
     </div>
   );
