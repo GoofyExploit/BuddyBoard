@@ -1,19 +1,14 @@
 import {
   Stage,
   Layer,
-  Rect,
-  Line,
-  Text,
-  Circle,
-  Ellipse,
-  Arrow,
-  RegularPolygon,
 } from "react-konva";
 import { useRef, useState, useEffect } from "react";
+import renderShape from "./renderShape";
 
 const CanvasStage = ({
   shapes,
   setShapes,
+  commitShapes,
   tool,
   strokeColor,
   strokeWidth,
@@ -24,10 +19,15 @@ const CanvasStage = ({
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingShapeId, setDrawingShapeId] = useState(null);
+  const shapesBeforeEraseRef = useRef(null);
 
   const [textInput, setTextInput] = useState(null);
   const textInputRef = useRef(null);
   const isTextInputNewRef = useRef(false);
+
+  const [selectedId, setSelectedId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+
 
   /* ---------------------------------
      Focus textarea when created
@@ -47,7 +47,75 @@ const CanvasStage = ({
   /* ---------------------------------
      Pointer Down
   ---------------------------------- */
+
+  const hitTest = (shape, x, y) => {
+    if (shape.type === "rect") {
+      return (
+        x >= shape.x && 
+        x <= shape.x + shape.width &&
+        y >= shape.y &&
+        y <= shape.y + shape.height
+      );
+    }
+
+    if (shape.type === "circle") {
+      return Math.hypot(x - shape.x, y - shape.y) <= shape.radius;
+      // calculate the distance d from the center to the point using the Pythagorean theorem: d=sqrt{(x-h)^2+(y-k)^2}. If d <= r, the point is inside or on the boundary
+
+    }
+
+    if (shape.type === "ellipse") {
+      const dx = (x - shape.x) / shape.radiusX;
+      const dy = (y - shape.y) / shape.radiusY;
+
+      return dx * dx + dy * dy <= 1;
+      //To determine if a point (x,y) is inside or on the boundary of an axis-aligned ellipse centered at (h,k) with semi-axes a and b, 
+      // check if ((x-h)^2)/(a^2)+((y-k)^2)/(b^2) <= 1 
+      // If the result is <1, the point is inside; if =1, it is on the boundary
+    }
+
+    if (shape.type === "triangle") {
+      return Math.hypot(x - shape.x, y- shape.y) <= shape.radius;
+    }
+
+    if (shape.type === "line" || shape.type === "straight") {
+      return shape.points.some((_, i) => {
+        if (i % 2 !== 0) return false;
+        const px = shape.points[i];
+        const py = shape.points[i + 1];
+        return Math.hypot(px - x, py - y) < 6;
+      });
+    }
+
+    if (shape.type === "text") {
+      const textWidth = shape.text.length * shape.fontSize * 0.6;
+      const textHeight = shape.fontSize * 1.2;
+      return (
+        x >= shape.x &&
+        x <= shape.x + textWidth &&
+        y >= shape.y - textHeight &&
+        y <= shape.y
+      );
+    }
+
+    return false;
+
+  }
   const handlePointerDown = () => {
+    if (tool === "select") {
+      const stage = stageRef.current;
+      const pos = stage.getPointerPosition();
+
+      const hitShape = [...shapes].reverse().find(shape => hitTest(shape, pos.x, pos.y));
+
+      if (hitShape) {
+        setSelectedId(hitShape.id);
+      }
+      else {
+        setSelectedId(null);
+      }
+      return;
+    }
     if (textInput) return;
 
     const stage = stageRef.current;
@@ -131,6 +199,7 @@ const CanvasStage = ({
 
     if (tool === "eraser") {
       setIsDrawing(true);
+      shapesBeforeEraseRef.current = [...shapes];
       eraseAtPoint(pos.x, pos.y);
     }
 
@@ -153,6 +222,7 @@ const CanvasStage = ({
   const handlePointerMove = () => {
     const stage = stageRef.current;
     const pos = stage?.getPointerPosition();
+
     if (!pos) return;
 
     if (isDrawing && tool === "eraser") {
@@ -228,6 +298,17 @@ const CanvasStage = ({
      Pointer Up
   ---------------------------------- */
   const handlePointerUp = () => {
+    if (tool === "select" && selectedId) {
+      commitShapes(shapes); // push to undo stack
+    }
+    if (isDrawing || drawingShapeId) {
+      if (tool === "eraser" && shapesBeforeEraseRef.current) {
+        commitShapes([...shapes], shapesBeforeEraseRef.current);
+        shapesBeforeEraseRef.current = null;
+      } else {
+        commitShapes([...shapes]);
+      }
+    }
     setIsDrawing(false);
     setDrawingShapeId(null);
   };
@@ -237,6 +318,9 @@ const CanvasStage = ({
   ---------------------------------- */
   const commitText = () => {
     if (isTextInputNewRef.current) return;
+    if (isDrawing || drawingShapeId) {
+      commitShapes([...shapes]);
+    }
 
     setShapes(prev => {
       if (!textInput.value.trim()) {
@@ -266,6 +350,7 @@ const CanvasStage = ({
     });
 
     setTextInput(null);
+    setEditingId(null);
   };
 
   /* ---------------------------------
@@ -354,57 +439,7 @@ const CanvasStage = ({
     );
   };
 
-  /* ---------------------------------
-     Render Shapes
-  ---------------------------------- */
-  const renderShape = shape => {
-    if (shape.type === "rect") return <Rect key={shape.id} {...shape} />;
-    if (shape.type === "circle") return <Circle key={shape.id} {...shape} />;
-    if (shape.type === "ellipse") return <Ellipse key={shape.id} {...shape} />;
-    if (shape.type === "line") return <Line key={shape.id} {...shape} />;
-    if (shape.type === "lineStraight") return <Line key={shape.id} {...shape} />;
-    if (shape.type === "arrow") return <Arrow key={shape.id} {...shape} />;
 
-    if (shape.type === "triangle") {
-      return (
-        <RegularPolygon
-          key={shape.id}
-          x={shape.x}
-          y={shape.y}
-          sides={3}
-          radius={shape.radius}
-          stroke={shape.stroke}
-          strokeWidth={shape.strokeWidth}
-        />
-      );
-    }
-
-    if (shape.type === "text") {
-      if (shape.id === textInput?.editId) return null;
-      return (
-        <Text
-          key={shape.id}
-          {...shape}
-          onDblClick={() => {
-            const rect = stageRef.current
-              .container()
-              .getBoundingClientRect();
-            setTextInput({
-              screenX: rect.left + shape.x,
-              screenY: rect.top + shape.y,
-              canvasX: shape.x,
-              canvasY: shape.y,
-              value: shape.text,
-              editId: shape.id,
-              fontSize: shape.fontSize,
-            });
-          }}
-        />
-      );
-    }
-
-    return null;
-  };
 
   return (
     <div
@@ -425,7 +460,41 @@ const CanvasStage = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        <Layer>{shapes.map(renderShape)}</Layer>
+        <Layer>
+          {shapes.map(shape =>
+            renderShape({
+              shape,
+              selectedId,
+              editingId,
+              onSelect: setSelectedId,
+              onDragMove: (id, pos) => {
+                setShapes(prev =>
+                  prev.map(s =>
+                    s.id === id ? { ...s, x: pos.x, y: pos.y } : s
+                  )
+                );
+              },
+              onDragEnd: () => {
+                commitShapes(shapes);
+              },
+              onDblClick: (shape) => {
+                if (shape.type === 'text') {
+                  const rect = stageRef.current.container().getBoundingClientRect();
+                  setEditingId(shape.id);
+                  setTextInput({
+                    screenX: rect.left + shape.x,
+                    screenY: rect.top + shape.y + shape.fontSize * 0.5,
+                    canvasX: shape.x,
+                    canvasY: shape.y,
+                    value: shape.text,
+                    fontSize: shape.fontSize,
+                    editId: shape.id,
+                  });
+                }
+              },
+            })
+          )}
+        </Layer>
       </Stage>
 
       {textInput && (

@@ -1,6 +1,44 @@
-import {Rect, Circle, Ellipse, Line, Arrow, RegularPolygon, Text} from "react-konva";
+import {
+  Rect,
+  Circle,
+  Ellipse,
+  Line,
+  Arrow,
+  RegularPolygon,
+  Text,
+} from "react-konva";
 
-const renderShape = (shape) => {
+const renderShape = ({
+  shape,
+  selectedId,
+  editingId,
+  onSelect,
+  onDragMove,
+  onDragEnd,
+  onDblClick,
+}) => {
+  const isSelected = shape.id === selectedId;
+
+  const commonProps = {
+    draggable: isSelected,
+    onPointerDown: (e) => {
+      e.cancelBubble = true; // prevent stage deselect
+      onSelect(shape.id);
+    },
+    onDragMove: (e) => {
+      onDragMove(shape.id, {
+        x: e.target.x(),
+        y: e.target.y(),
+      });
+    },
+    onDragEnd: (e) => {
+      onDragEnd(shape.id, {
+        x: e.target.x(),
+        y: e.target.y(),
+      });
+    },
+  };
+
   switch (shape.type) {
     case "rect":
       return (
@@ -13,7 +51,7 @@ const renderShape = (shape) => {
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}
           fill={shape.fillEnabled ? shape.fill : undefined}
-          listening={false}
+          {...commonProps}
         />
       );
 
@@ -27,7 +65,7 @@ const renderShape = (shape) => {
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}
           fill={shape.fillEnabled ? shape.fill : undefined}
-          listening={false}
+          {...commonProps}
         />
       );
 
@@ -42,7 +80,7 @@ const renderShape = (shape) => {
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}
           fill={shape.fillEnabled ? shape.fill : undefined}
-          listening={false}
+          {...commonProps}
         />
       );
 
@@ -57,7 +95,7 @@ const renderShape = (shape) => {
           strokeWidth={shape.strokeWidth}
           lineCap="round"
           lineJoin="round"
-          listening={false}
+          {...commonProps}
         />
       );
 
@@ -73,26 +111,22 @@ const renderShape = (shape) => {
           fill={shape.stroke}
           pointerLength={shape.pointerLength}
           pointerWidth={shape.pointerWidth}
-          listening={false}
+          {...commonProps}
         />
       );
 
     case "triangle": {
-      const w = Math.max(1, shape.width);
-      const h = Math.max(1, shape.height);
-      const radius = Math.min(w, h) / 2;
-
       return (
         <RegularPolygon
           key={shape.id}
-          x={shape.x + w / 2}
-          y={shape.y + h / 2}
+          x={shape.x}
+          y={shape.y}
           sides={3}
-          radius={radius}
+          radius={Math.max(1, shape.radius)}
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}
           fill={shape.fillEnabled ? shape.fill : undefined}
-          listening={false}
+          {...commonProps}
         />
       );
     }
@@ -107,11 +141,12 @@ const renderShape = (shape) => {
           tension={0.5}
           lineCap="round"
           lineJoin="round"
-          listening={false}
+          {...commonProps}
         />
       );
 
     case "text":
+      if (shape.id === editingId) return null;
       return (
         <Text
           key={shape.id}
@@ -120,7 +155,8 @@ const renderShape = (shape) => {
           text={shape.text}
           fontSize={shape.fontSize}
           fill={shape.fill}
-          listening={false}
+          onDblClick={() => onDblClick(shape)}
+          {...commonProps}
         />
       );
 
