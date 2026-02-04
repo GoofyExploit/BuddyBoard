@@ -32,12 +32,13 @@ const NotePage = () => {
   };
 
   return (
-    <div className = "h-screen flex flex-col">
-      <ToolBar
-        toolState={toolState}
-        setToolState={setToolState}
-      />
-
+    <div className="h-screen relative">
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10">
+        <ToolBar
+          toolState={toolState}
+          setToolState={setToolState}
+        />
+      </div>
 
       <CanvasStage
         shapes={shapes}
@@ -45,7 +46,7 @@ const NotePage = () => {
         tool={toolState.tool}
         strokeColor={toolState.strokeColor}
         strokeWidth={toolState.strokeWidth}
-        eraserSize = {toolState.eraserSize}
+        eraserSize={toolState.eraserSize}
       />
     </div>
   );

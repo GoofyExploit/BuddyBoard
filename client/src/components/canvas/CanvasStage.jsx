@@ -96,8 +96,7 @@ const CanvasStage = ({
       createShape("triangle", {
         x: pos.x,
         y: pos.y,
-        width: 0,
-        height: 0,
+        radius: 0,
         stroke: strokeColor,
         strokeWidth,
       });
@@ -178,7 +177,7 @@ const CanvasStage = ({
         prev.map(shape => {
           if (shape.id !== drawingShapeId) return shape;
 
-          if (shape.type === "rect" || shape.type === "triangle") {
+          if (shape.type === "rect") {
             const w = pos.x - shape.x;
             const h = pos.y - shape.y;
             return {
@@ -187,6 +186,13 @@ const CanvasStage = ({
               y: h < 0 ? pos.y : shape.y,
               width: Math.abs(w),
               height: Math.abs(h),
+            };
+          }
+
+          if (shape.type === "triangle") {
+            return {
+              ...shape,
+              radius: Math.min(Math.abs(pos.x - shape.x), Math.abs(pos.y - shape.y)),
             };
           }
 
@@ -265,25 +271,85 @@ const CanvasStage = ({
   /* ---------------------------------
      Eraser
   ---------------------------------- */
+
+  const dist = (x1, y1, x2, y2) => Math.hypot(x1 - x2, y1 - y2);
+
+  const pointToLineDistance = (px, py, x1, y1, x2, y2) => {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len === 0) return dist(px, py, x1, y1);
+    const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (len * len)));
+    const projx = x1 + t * dx, projy = y1 + t * dy;
+    return dist(px, py, projx, projy);
+  };
+
+  const isPointNearLine = (x, y, line, radius) => {
+    if (line.type === "lineStraight" || line.type === "arrow") {
+      const dx = line.points[2], dy = line.points[3];
+      const len = Math.hypot(dx, dy);
+      if (len === 0) return dist(x, y, line.x, line.y) <= radius;
+      const t = Math.max(0, Math.min(1, ((x - line.x) * dx + (y - line.y) * dy) / (len * len)));
+      const projx = line.x + t * dx, projy = line.y + t * dy;
+      return dist(x, y, projx, projy) <= radius;
+    }
+    // For pen lines, check each segment
+    const points = line.points;
+    for (let i = 0; i < points.length - 2; i += 2) {
+      if (pointToLineDistance(x, y, points[i], points[i+1], points[i+2], points[i+3]) <= radius) return true;
+    }
+    return false;
+  };
+
+  const isPointInRect = (x, y, rect) => x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
+
+  const isPointInCircle = (x, y, circle) => dist(x, y, circle.x, circle.y) <= circle.radius;
+
+  const isPointInEllipse = (x, y, ellipse) => ((x - ellipse.x) / ellipse.radiusX) ** 2 + ((y - ellipse.y) / ellipse.radiusY) ** 2 <= 1;
+
+  const isPointInTriangle = (x, y, triangle) => dist(x, y, triangle.x, triangle.y) <= triangle.radius; // Approximate with circle
+
+  const eraseLineSmoothly = (line, x, y, radius) => {
+    const points = line.points;
+    const segments = [];
+    let currentSegment = [];
+
+    for (let i = 0; i < points.length; i += 2) {
+      const px = points[i];
+      const py = points[i + 1];
+
+      if (dist(px, py, x, y) > radius) {
+        currentSegment.push(px, py);
+      } else {
+        if (currentSegment.length >= 4) {
+          segments.push({ ...line, points: [...currentSegment] });
+        }
+        currentSegment = [];
+      }
+    }
+
+    if (currentSegment.length >= 4) {
+      segments.push({ ...line, points: currentSegment });
+    }
+
+    return segments;
+  };
+
   const eraseAtPoint = (x, y) => {
     setShapes(prev =>
-      prev.filter(shape => {
-        if (shape.type === "text") return true;
+      prev.flatMap(shape => {
+        if (shape.type === "text") return [shape];
 
         if (shape.type === "line") {
-          const filtered = [];
-          for (let i = 0; i < shape.points.length; i += 2) {
-            const dx = shape.points[i] - x;
-            const dy = shape.points[i + 1] - y;
-            if (Math.sqrt(dx * dx + dy * dy) > eraserSize) {
-              filtered.push(shape.points[i], shape.points[i + 1]);
-            }
-          }
-          shape.points = filtered;
-          return filtered.length >= 4;
+          return eraseLineSmoothly(shape, x, y, eraserSize);
         }
 
-        return true;
+        if (shape.type === "rect" && isPointInRect(x, y, shape)) return [];
+        if (shape.type === "circle" && isPointInCircle(x, y, shape)) return [];
+        if (shape.type === "ellipse" && isPointInEllipse(x, y, shape)) return [];
+        if (shape.type === "triangle" && isPointInTriangle(x, y, shape)) return [];
+        if ((shape.type === "lineStraight" || shape.type === "arrow") && isPointNearLine(x, y, shape, eraserSize)) return [];
+
+        return [shape];
       })
     );
   };
@@ -300,14 +366,13 @@ const CanvasStage = ({
     if (shape.type === "arrow") return <Arrow key={shape.id} {...shape} />;
 
     if (shape.type === "triangle") {
-      const r = Math.min(shape.width, shape.height) / 2;
       return (
         <RegularPolygon
           key={shape.id}
-          x={shape.x + shape.width / 2}
-          y={shape.y + shape.height / 2}
+          x={shape.x}
+          y={shape.y}
           sides={3}
-          radius={r}
+          radius={shape.radius}
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}
         />

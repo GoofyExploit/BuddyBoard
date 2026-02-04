@@ -18,7 +18,7 @@ const Toolbar = ({ toolState, setToolState }) => {
   return (
     <div
       className="
-        flex items-center gap-3 px-4 py-3 border-b bg-white shadow-sm
+        flex items-center justify-center gap-3 px-4 py-3 border-b bg-white shadow-sm rounded-lg
       "
     >
       {/* TOOLS */}
