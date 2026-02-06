@@ -5,6 +5,18 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
+// Cookie configuration for cross-domain support
+// In production (HTTPS), use 'None' and secure: true for cross-domain cookies
+// In development (HTTP/localhost), use 'Lax' and secure: false
+const isProduction = process.env.NODE_ENV === 'production' || 
+                     process.env.FRONTEND_URL?.includes('https://') ||
+                     (!process.env.FRONTEND_URL?.includes('localhost') && !process.env.FRONTEND_URL?.includes('127.0.0.1'));
+const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction, // true for HTTPS, false for HTTP
+    sameSite: isProduction ? 'None' : 'Lax', // 'None' for cross-domain, 'Lax' for same-domain
+};
+
 // initiate Google OAuth2 login
 
 router.get("/google",
@@ -33,16 +45,8 @@ router.get(
             await user.save();
 
             // send token as http-only cookie
-            res.cookie('accessToken', accessToken, {
-                httpOnly: true,
-                secure : false,
-                sameSite: 'Lax', // lax means cookie sent on same site and cross-site top-level navigation
-            });
-            res.cookie('refreshToken', refreshToken , {
-                httpOnly: true,
-                secure : false,
-                sameSite: 'Lax',
-            })
+            res.cookie('accessToken', accessToken, cookieOptions);
+            res.cookie('refreshToken', refreshToken, cookieOptions);
 
             res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
             
@@ -124,16 +128,8 @@ router.post("/refresh", async(req, res) => {
         await user.save();
 
         // send new tokens as http-only cookies
-        res.cookie('accessToken', newAccessToken, {
-            httpOnly: true,
-            secure : false,
-            sameSite: 'Lax',
-        });
-        res.cookie('refreshToken', newRefreshToken , {
-            httpOnly: true,
-            secure : false,
-            sameSite: 'Lax',
-        });
+        res.cookie('accessToken', newAccessToken, cookieOptions);
+        res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
         return res.status(200).json({message: "Tokens refreshed successfully"});
 
@@ -167,8 +163,8 @@ router.post("/logout", async(req,res)=>{
             // remove the refreshToken from user's refreshTokens array
         });
 
-        res.clearCookie('accessToken');
-        res.clearCookie('refreshToken');
+        res.clearCookie('accessToken', cookieOptions);
+        res.clearCookie('refreshToken', cookieOptions);
         return res.status(200).json({message: "Logged out successfully"});
     }
     catch (error) {
