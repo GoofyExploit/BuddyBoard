@@ -1,4 +1,0 @@
-- [x] Define the getWorldPos function to transform pointer positions to world coordinates using camera x, y, and scale.
-- [x] Apply camera.scale to Stage scaleX and scaleY.
-- [x] Fix text onDblClick screen position calculations to use camera.scale.
-- [x] Adjust panning to divide dx/dy by camera.scale.
