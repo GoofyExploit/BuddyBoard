@@ -115,22 +115,38 @@ const NotePage = () => {
 
   useEffect(() => {
     const onKey = (e) => {
-      const isUndo = (e.ctrlKey || e.metaKey) && e.key === "z";
-      const isRedo = (e.ctrlKey || e.metaKey) && e.key === "y";
+      // Check if we're in an input field - don't intercept if user is typing
+      const target = e.target;
+      const isInputField = target.tagName === 'INPUT' || 
+                          target.tagName === 'TEXTAREA' || 
+                          target.isContentEditable;
+      
+      if (isInputField) return;
+
+      // Undo: Ctrl+Z (or Cmd+Z on Mac)
+      const isUndo = (e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey;
+      // Redo: Ctrl+Shift+Z or Ctrl+Y (or Cmd+Shift+Z/Cmd+Y on Mac)
+      const isRedo = (e.ctrlKey || e.metaKey) && 
+                     ((e.shiftKey && e.key === "z") || e.key === "y");
 
       if (isUndo) {
         e.preventDefault();
+        e.stopPropagation();
         undo();
+        return false;
       }
 
       if (isRedo) {
         e.preventDefault();
+        e.stopPropagation();
         redo();
+        return false;
       }
     };
 
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Use capture phase to ensure we catch the event before other handlers
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [undo, redo]);
 
   return (

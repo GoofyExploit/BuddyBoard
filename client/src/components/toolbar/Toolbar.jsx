@@ -7,6 +7,7 @@ import {
   FiMinus,
   FiArrowRight,
   FiTriangle,
+  FiMove,
 } from "react-icons/fi";
 import { BsEraser } from "react-icons/bs";
 
@@ -22,6 +23,13 @@ const Toolbar = ({ toolState, setToolState }) => {
       "
     >
       {/* TOOLS */}
+      <ToolButton
+        icon={<FiMove />}
+        label="Pan"
+        active={tool === "pan"}
+        onClick={() => setToolState(s => ({...s, tool : "pan"}))}
+      />
+
       <ToolButton
         icon={<FiMousePointer/>}
         label="Select"

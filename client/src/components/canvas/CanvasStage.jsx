@@ -44,6 +44,10 @@ const CanvasStage = ({
 
   const isPanningRef = useRef(false);
   const lastPanPos = useRef({ x: 0, y: 0 });
+  const touchStartPos = useRef(null);
+  const touchStartTime = useRef(0);
+  const isTouchDevice = useRef(false);
+  const touchesRef = useRef([]); // Track multiple touches for two-finger pan
 
   const getWorldPos = () => {
     const stage = stageRef.current;
@@ -78,8 +82,8 @@ const CanvasStage = ({
   ---------------------------------- */
 
   const getTouchCenter = (t1, t2) => ({
-    x: (t1.clientX + t2.clientX) / 2,
-    y: (t1.clientY + t2.clientY) / 2,
+    x: ((t1.clientX || t1.x) + (t2.clientX || t2.x)) / 2,
+    y: ((t1.clientY || t1.y) + (t2.clientY || t2.y)) / 2,
   });
 
 
@@ -137,9 +141,34 @@ const CanvasStage = ({
     return false;
 
   }
-  const handlePointerDown = () => {
+  const handlePointerDown = (e) => {
     const stage = stageRef.current;
     if (!stage) return;
+
+    // Detect touch device
+    const isTouch = e.evt?.pointerType === 'touch' || e.evt?.touches?.length > 0;
+    if (isTouch) {
+      isTouchDevice.current = true;
+      touchStartPos.current = stage.getPointerPosition();
+      touchStartTime.current = Date.now();
+      
+      // Track touches for two-finger pan
+      if (e.evt?.touches) {
+        touchesRef.current = Array.from(e.evt.touches).map(t => ({
+          id: t.identifier,
+          x: t.clientX,
+          y: t.clientY
+        }));
+        
+        // Two-finger touch = always pan (works with any tool)
+        if (touchesRef.current.length >= 2) {
+          isPanningRef.current = true;
+          const center = getTouchCenter(touchesRef.current[0], touchesRef.current[1]);
+          lastPanPos.current = { x: center.x, y: center.y };
+          return;
+        }
+      }
+    }
 
     if (tool === "pan") {
       isPanningRef.current = true;
@@ -147,6 +176,7 @@ const CanvasStage = ({
       return;
     }
 
+    // On touch devices, allow panning with one finger when using select tool and not hitting a shape
     if (tool === "select") {
       const pos = getWorldPos();
       if (!pos) return;
@@ -155,9 +185,15 @@ const CanvasStage = ({
 
       if (hitShape) {
         setSelectedId(hitShape.id);
-      }
-      else {
+        // Don't pan if we hit a shape
+        return;
+      } else {
         setSelectedId(null);
+        // On touch devices, prepare for potential panning (will be enabled on move if moved enough)
+        if (isTouch) {
+          // Don't enable panning immediately - wait for movement to distinguish tap from drag
+          return;
+        }
       }
       return;
     }
@@ -265,12 +301,54 @@ const CanvasStage = ({
   /* ---------------------------------
      Pointer Move
   ---------------------------------- */
-  const handlePointerMove = () => {
+  const handlePointerMove = (e) => {
     const stage = stageRef.current;
     if (!stage) return;
 
     const pos = getWorldPos();
     if (!pos) return;
+
+    // Handle two-finger pan on touch devices
+    const isTouch = e?.evt?.pointerType === 'touch' || e?.evt?.touches?.length > 0;
+    if (isTouch && e.evt?.touches?.length >= 2) {
+      const touches = Array.from(e.evt.touches);
+      const center = getTouchCenter(touches[0], touches[1]);
+      const currentPos = { x: center.x, y: center.y };
+      
+      if (!isPanningRef.current) {
+        isPanningRef.current = true;
+        lastPanPos.current = currentPos;
+      } else {
+        const dx = currentPos.x - lastPanPos.current.x;
+        const dy = currentPos.y - lastPanPos.current.y;
+        
+        setCamera(cam => ({
+          ...cam,
+          x: cam.x + dx,
+          y: cam.y + dy,
+        }));
+        
+        lastPanPos.current = currentPos;
+      }
+      return; // Don't process other actions during two-finger pan
+    }
+
+    // On touch devices with select tool, enable panning if user moves finger significantly
+    if (tool === "select" && (isTouch || isTouchDevice.current) && touchStartPos.current && !isPanningRef.current) {
+      const currentPos = stage.getPointerPosition();
+      if (currentPos && touchStartPos.current) {
+        const dx = currentPos.x - touchStartPos.current.x;
+        const dy = currentPos.y - touchStartPos.current.y;
+        const distance = Math.hypot(dx, dy);
+        
+        // If moved more than 10px, enable panning
+        if (distance > 10) {
+          isPanningRef.current = true;
+          lastPanPos.current = touchStartPos.current;
+          setSelectedId(null); // Clear selection when panning starts
+        }
+      }
+    }
 
     if (isDrawing && tool === "eraser") {
       scheduleEraseAtPoint(pos.x, pos.y);
@@ -361,7 +439,41 @@ const CanvasStage = ({
   /* ---------------------------------
      Pointer Up
   ---------------------------------- */
-  const handlePointerUp = () => {
+  const handlePointerUp = (e) => {
+    const isTouch = e.evt?.pointerType === 'touch' || e.evt?.touches?.length > 0;
+    
+    // Update touches tracking
+    if (isTouch && e.evt?.touches) {
+      touchesRef.current = Array.from(e.evt.touches).map(t => ({
+        id: t.identifier,
+        x: t.clientX,
+        y: t.clientY
+      }));
+      
+      // If still have 2+ touches, keep panning
+      if (touchesRef.current.length >= 2) {
+        return;
+      }
+    }
+    
+    // On touch devices, check if this was a pan gesture (moved significantly)
+    if (isTouch && isPanningRef.current && touchStartPos.current) {
+      const currentPos = stageRef.current?.getPointerPosition();
+      if (currentPos && touchStartPos.current) {
+        const dx = currentPos.x - touchStartPos.current.x;
+        const dy = currentPos.y - touchStartPos.current.y;
+        const distance = Math.hypot(dx, dy);
+        
+        // If moved more than 10px, it was a pan gesture - don't trigger other actions
+        if (distance > 10) {
+          isPanningRef.current = false;
+          touchStartPos.current = null;
+          touchesRef.current = [];
+          return;
+        }
+      }
+    }
+
     if (tool === "select" && selectedId) {
       commitShapes(shapes); // push to undo stack
     }
@@ -373,10 +485,11 @@ const CanvasStage = ({
         commitShapes([...shapes]);
       }
     }
-    // Stop mouse panning
+    // Stop panning
     if (isPanningRef.current) {
       isPanningRef.current = false;
     }
+    touchStartPos.current = null;
     setIsDrawing(false);
     setDrawingShapeId(null);
   };
