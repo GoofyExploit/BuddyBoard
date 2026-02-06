@@ -147,6 +147,12 @@ const renderShape = ({
 
     case "text":
       if (shape.id === editingId) return null;
+      // On touch devices, text should not be draggable - tap to edit instead
+      const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window;
+      const textProps = {
+        ...commonProps,
+        draggable: isSelected && !isTouchDevice, // Disable dragging on touch devices
+      };
       return (
         <Text
           key={shape.id}
@@ -156,7 +162,7 @@ const renderShape = ({
           fontSize={shape.fontSize}
           fill={shape.fill}
           onDblClick={() => onDblClick(shape)}
-          {...commonProps}
+          {...textProps}
         />
       );
 

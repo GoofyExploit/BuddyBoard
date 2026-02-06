@@ -186,6 +186,11 @@ const CanvasStage = ({
       if (hitShape) {
         setSelectedId(hitShape.id);
         // Don't pan if we hit a shape
+        // On touch devices, if clicking on already selected text, prepare for potential edit
+        if (isTouch && hitShape.type === "text" && hitShape.id === selectedId) {
+          // Will be handled in handlePointerUp if it's a tap (not drag)
+          return;
+        }
         return;
       } else {
         setSelectedId(null);
@@ -334,6 +339,7 @@ const CanvasStage = ({
     }
 
     // On touch devices with select tool, enable panning if user moves finger significantly
+    // But don't enable panning if we're clicking on a shape (especially text)
     if (tool === "select" && (isTouch || isTouchDevice.current) && touchStartPos.current && !isPanningRef.current) {
       const currentPos = stage.getPointerPosition();
       if (currentPos && touchStartPos.current) {
@@ -341,7 +347,17 @@ const CanvasStage = ({
         const dy = currentPos.y - touchStartPos.current.y;
         const distance = Math.hypot(dx, dy);
         
-        // If moved more than 10px, enable panning
+        // Check if we're over a shape - if so, don't enable panning
+        const pos = getWorldPos();
+        if (pos) {
+          const hitShape = [...shapes].reverse().find(shape => hitTest(shape, pos.x, pos.y));
+          if (hitShape) {
+            // Don't enable panning if clicking on a shape
+            return;
+          }
+        }
+        
+        // If moved more than 10px and not over a shape, enable panning
         if (distance > 10) {
           isPanningRef.current = true;
           lastPanPos.current = touchStartPos.current;
@@ -470,6 +486,41 @@ const CanvasStage = ({
           touchStartPos.current = null;
           touchesRef.current = [];
           return;
+        }
+      }
+    }
+
+    // Handle text editing on touch devices - single tap on selected text should edit
+    if (isTouch && tool === "select" && selectedId && touchStartPos.current) {
+      const currentPos = stageRef.current?.getPointerPosition();
+      if (currentPos && touchStartPos.current) {
+        const dx = currentPos.x - touchStartPos.current.x;
+        const dy = currentPos.y - touchStartPos.current.y;
+        const distance = Math.hypot(dx, dy);
+        const timeElapsed = Date.now() - touchStartTime.current;
+        
+        // If it was a tap (moved less than 5px and took less than 300ms), check for text edit
+        if (distance < 5 && timeElapsed < 300) {
+          const selectedShape = shapes.find(s => s.id === selectedId);
+          if (selectedShape && selectedShape.type === "text") {
+            // Edit the text
+            const stage = stageRef.current;
+            const rect = stage.container().getBoundingClientRect();
+            const screenX = rect.left + (selectedShape.x * camera.scale + camera.x);
+            const screenY = rect.top + (selectedShape.y * camera.scale + camera.y) + selectedShape.fontSize * 0.5;
+            setEditingId(selectedShape.id);
+            setTextInput({
+              screenX,
+              screenY,
+              canvasX: selectedShape.x,
+              canvasY: selectedShape.y,
+              value: selectedShape.text,
+              fontSize: selectedShape.fontSize,
+              editId: selectedShape.id,
+            });
+            touchStartPos.current = null;
+            return;
+          }
         }
       }
     }
