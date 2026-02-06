@@ -3,6 +3,9 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { fetchNote, updateNote } from "../api/note.api";
 import ToolBar from "../components/toolbar/Toolbar";
+import socket from "../socket/socket";
+
+
 
 const NotePage = () => {
   const { id } = useParams();
@@ -21,6 +24,14 @@ const NotePage = () => {
   const futureRef = useRef([]);
   const shapesRef = useRef(shapes);
   const isUndoRedoInProgress = useRef(false);
+
+  useEffect (() => {
+    socket.emit("join_note", id);
+
+    return () => {
+      socket.off("shape_update");
+    }
+  }, [id]);
 
   useEffect(() => {
     shapesRef.current = shapes;
@@ -42,10 +53,29 @@ const NotePage = () => {
     load();
   }, [id]);
 
+  useEffect(() => {
+    const onRemoteUpdate = ({ shapeData }) => {
+      setShapes(shapeData);
+    };
+
+    socket.on("shape_update", onRemoteUpdate);
+
+    return () => {
+      socket.off("shape_update", onRemoteUpdate);
+    };
+  }, []);
+
+
   const commitShapes = async (newShapes, prevShapes = null) => {
     setHistory(prev => [...prev.slice(-50), prevShapes || shapes]);
     setFuture([]);
     setShapes(newShapes);
+
+    socket.emit("shape_update", {
+      noteId : id,
+      shapeData: newShapes
+    });
+
     await updateNote(id, { shapes: newShapes });
   };
 
