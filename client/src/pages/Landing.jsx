@@ -1,5 +1,6 @@
 import { PenLine, ArrowRight, Sparkles, Layers, Lock, Zap, Cloud, Palette, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import styles from "../css/Landing.module.css";
 import buddyBoardLogo from "../images/BuddyBoard.png";
 
@@ -38,6 +39,15 @@ const features = [
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleMainAction = () => {
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      navigate("/login");
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -48,9 +58,9 @@ const Landing = () => {
             <img src={buddyBoardLogo} alt="BuddyBoard" className={styles.logoImage} />
           </div>
 
-          <div className={styles.navActions}>
+<div className={styles.navActions}>
             <button className={styles.btnGhost} onClick={() => navigate("/login")}>Log in</button>
-            <button className={styles.btnPrimary}>Go to BuddyBoard</button>
+            <button className={styles.btnPrimary} onClick={handleMainAction}>Go to BuddyBoard</button>
           </div>
         </div>
       </nav>
@@ -68,8 +78,8 @@ const Landing = () => {
             Now with <strong>collaboration</strong>.
           </p>
 
-          <div className={styles.heroCtas}>
-            <button className={styles.btnPrimary}>
+<div className={styles.heroCtas}>
+            <button className={styles.btnPrimary} onClick={handleMainAction}>
               Start Writing Free
               <ArrowRight className={styles.btnIcon} />
             </button>
@@ -109,10 +119,10 @@ const Landing = () => {
       <section className={styles.cta}>
         <div className={styles.ctaCard}>
           <h2 className={styles.ctaTitle}>Ready to write?</h2>
-          <p className={styles.ctaSubtitle}>
+<p className={styles.ctaSubtitle}>
             Join thousands of writers and thinkers who've made BuddyBoard their home for ideas.
           </p>
-          <button className={styles.btnPrimary}>
+          <button className={styles.btnPrimary} onClick={handleMainAction}>
             Get Started — It's Free
             <ArrowRight className={styles.btnIcon} />
           </button>
